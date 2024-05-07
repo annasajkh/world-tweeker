@@ -1,0 +1,43 @@
+:root {
+    --item-color: #181b1e;
+	--background-color: #1e2226;
+    --item-hover-color: #24292e;
+    --border-color: #30363d;
+    --border-color-focused: #363d44;
+
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+	line-height: 1.5;
+	font-weight: 400;
+
+	color: rgba(255, 255, 255, 0.87);
+	background-color: var(--background-color);
+
+	font-synthesis: none;
+	text-rendering: optimizeLegibility;
+
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	-webkit-text-size-adjust: 100%;
+}
+
+h1 {
+	font-size: 3.2em;
+	line-height: 1.1;
+}
+
+a {
+	all: unset;
+}
+
+input {
+	all: unset;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+html, body {
+	overflow: hidden !important;
+}

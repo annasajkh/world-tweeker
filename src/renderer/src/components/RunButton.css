@@ -1,0 +1,29 @@
+.run-button {
+    background-color: var(--item-hover-color);
+    height: 30px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding-left: 8px;
+    padding-right: 8px;
+    user-select: none;
+}
+
+.run-button:hover {
+    cursor: pointer;
+}
+
+.run-button:active {
+    transform: scale(0.975);
+}
+
+.run-button-image {
+    width: 16px;
+    height: 16px;
+    margin-right: 4px;
+}
+
+.run-button-text {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
