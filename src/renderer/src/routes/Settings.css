@@ -1,3 +1,55 @@
 .settings {
+    height: 100%;
+    width: 100%;
+}
 
+.settings-items {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    padding-top: 16px;
+    padding-bottom: 16px;
+}
+
+.settings-items-centered {
+    width: 512px;
+    height: 100%;
+}
+
+.back-button {
+    position: relative;
+    top: 8px;
+    left: 8px;
+}
+
+.oneshot-folder-path-description {
+    margin-top: 0px;
+    margin-bottom: 8px;
+}
+
+.oneshot-folder-path-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.oneshot-folder-path-input {
+    padding-left: 8px;
+    padding-right: 8px;
+    border-radius: 2px;
+    margin-right: 8px;
+    background-color: var(--item-color);
+    border: 1px solid var(--border-color);
+    height: 32px;
+    width: 512px;
+}
+
+.oneshot-folder-path-selector {
+    padding-top: 1px;
+    padding-bottom: 1px;
+    padding-left: 4px;
+    padding-right: 4px;
+    border-radius: 2px;
+    background-color: var(--item-hover-color);
 }

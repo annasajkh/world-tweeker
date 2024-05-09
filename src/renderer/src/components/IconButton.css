@@ -1,0 +1,17 @@
+.icon-button {
+    align-items: center;
+    height: 32px;
+}
+
+.icon-button:hover {
+    cursor: pointer;
+}
+
+.icon-button:active {
+    transform: scale(0.95);
+}
+
+.icon-button-image {
+    width: 32px;
+    height: 32px;
+}
