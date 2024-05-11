@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prettier/prettier */
+
 import Topbar from '@renderer/components/Topbar'
 import './MainArea.css'
 import { useEffect, useState } from "react";
@@ -13,10 +14,24 @@ export default function MainArea(): JSX.Element {
     const [oneshotFolder, setOneshotFolder] = useState('')
     const [isFolderOneshotDir, setIsFolderOneshotDir] = useState(false);
 
+    async function runButtonClicked(): Promise<void> {
+        await window.api.runOneshot();
+    }
+
     useEffect(() => {
         async function isSettingsFileExist(): Promise<void> {
             const isFileExist = await window.api.isSettingsFileExist();
-            setOpenModal(!isFileExist);
+            
+            if (isFileExist) {
+                const settings: string = await window.api.readSettingsFile();
+                const settingsJson: SettingsData = JSON.parse(settings);
+
+                setOneshotFolder(settingsJson["oneshotPath"]);
+                setOpenModal(!(await window.api.isFolderOneshotDir(settingsJson["oneshotPath"])));
+            } else {
+                setOpenModal(!isFileExist);
+            }
+
         }
 
         isSettingsFileExist();
@@ -33,20 +48,22 @@ export default function MainArea(): JSX.Element {
     }
 
     async function oneshotFolderPathConfirmClicked(): Promise<void> {
-        const settingsJson: SettingsData = {
-            oneshotPath: oneshotFolder
+        if (await window.api.isFolderOneshotDir(oneshotFolder)) {
+            const settingsJson: SettingsData = {
+                oneshotPath: oneshotFolder
+            }
+    
+            await window.api.writeSettingsFile(JSON.stringify(settingsJson));
+            
+            setOpenModal(false);   
         }
-
-        await window.api.writeSettingsFile(JSON.stringify(settingsJson));
-        
-        setOpenModal(false);
     }
 
     return (
         <div className="main-area">
-            <Topbar />
+            <Topbar runButtonClicked={runButtonClicked} />
 
-            <Modal className="oneshot-folder-not-selected-modal" openModal={openModal} closeModal={() => setOpenModal(false)}>
+            <Modal haveCloseButton={false} canClose={isFolderOneshotDir} className="oneshot-folder-not-selected-modal" openModal={openModal} closeModal={() => setOpenModal(false)}>
                 <p className="oneshot-folder-not-selected-warning">Please select Oneshot folder located in steamapps/common</p>
                 <FolderSelector folderNotValidWarningMessage="This folder seems doesn't contain oneshot" isWarningTriggered={!isFolderOneshotDir} getFolderPath={(): string => oneshotFolder} setFolderPath={(folderPath: string) => setOneshotFolder(folderPath)} openFolderPathSelector={oneshotFolderPathSelector} />
                 <TextButton text="Confirm" className="oneshot-folder-path-confirm-button" onClick={oneshotFolderPathConfirmClicked} />

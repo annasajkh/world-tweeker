@@ -1,14 +1,16 @@
 /* eslint-disable prettier/prettier */
+
 import IconButton from "./IconButton"
 import RunButton from './RunButton'
 import './Topbar.css'
 import { Link } from "react-router-dom"
 
+interface Props {
+    runButtonClicked: () => void;
+}
 
-export default function Topbar(): JSX.Element {
-    async function runButtonClicked(): Promise<void> {
-        await window.api.runOneshot();
-    }
+
+export default function Topbar({ runButtonClicked }: Props): JSX.Element {
 
     return (
         <div className="top-bar">

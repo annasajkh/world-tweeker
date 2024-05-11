@@ -53,6 +53,10 @@ export async function isFolderOneshotDir(dirPath: string): Promise<boolean> {
 
     let checkCount: number = 0;
 
+    if (dirPath.trim() == "") {
+        return false;
+    }
+
     fs.readdirSync(dirPath).forEach(file => {
         foldersAndFilesInDirPath.push(file);
     });

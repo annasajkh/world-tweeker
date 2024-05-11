@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prettier/prettier */
+
 import IconButton from '@renderer/components/IconButton'
 import './Settings.css'
 import { Link } from 'react-router-dom'
