@@ -1,0 +1,21 @@
+.modal {
+
+    background-color: var(--item-color);
+    border: 1px solid var(--border-color);
+}
+
+.modal::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.modal-close-button {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 24px;
+    height: 24px;
+}
+
+.modal-content {
+    padding-top: 8px;
+}

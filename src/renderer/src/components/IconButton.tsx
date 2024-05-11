@@ -3,14 +3,14 @@ import './IconButton.css'
 
 interface Props {
     className: string
-    iconPath: string
+    src: string
     onClick: () => void
 }
 
-export default function IconButton({ className, iconPath, onClick }: Props): JSX.Element {
+export default function IconButton({ className, src, onClick }: Props): JSX.Element {
     return (
         <div className={`icon-button ${className}`} onClick={onClick}>
-            <img src={iconPath} className="icon-button-image" />
+            <img src={src} className="icon-button-image" />
         </div>
     )
 }

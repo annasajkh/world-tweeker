@@ -1,25 +1,17 @@
-.run-button {
+.text-button {
     border-radius: 2px;
     background-color: var(--item-hover-color);
-    height: 30px;
     display: flex;
     flex-direction: row;
     align-items: center;
-    padding-left: 8px;
-    padding-right: 8px;
+    justify-content: center;
     user-select: none;
 }
 
-.run-button:hover {
+.text-button:hover {
     cursor: pointer;
 }
 
-.run-button:active {
+.text-button:active {
     transform: scale(0.95);
-}
-
-.run-button-image {
-    width: 16px;
-    height: 16px;
-    margin-right: 4px;
 }

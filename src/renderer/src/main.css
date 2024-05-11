@@ -25,12 +25,14 @@ h1 {
     line-height: 1.1;
 }
 
-a {
+a, input {
     all: unset;
 }
 
-input {
-    all: unset;
+p {
+    color: white;
+    margin-top: 0px;
+    margin-bottom: 0px;
 }
 
 html,body, #root {
@@ -38,7 +40,6 @@ html,body, #root {
     margin: 0;
 }
 
-html,
-body {
+html, body {
     overflow: hidden !important;
 }
