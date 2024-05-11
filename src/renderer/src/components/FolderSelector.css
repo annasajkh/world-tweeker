@@ -24,6 +24,7 @@
     border: 1px solid var(--border-color);
     height: 32px;
     width: 512px;
+    pointer-events: none;
 }
 
 
