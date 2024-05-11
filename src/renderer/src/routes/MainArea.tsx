@@ -65,7 +65,7 @@ export default function MainArea(): JSX.Element {
 
             <Modal haveCloseButton={false} canClose={isFolderOneshotDir} className="oneshot-folder-not-selected-modal" openModal={openModal} closeModal={() => setOpenModal(false)}>
                 <p className="oneshot-folder-not-selected-warning">Please select Oneshot folder located in steamapps/common</p>
-                <FolderSelector folderNotValidWarningMessage="This folder seems doesn't contain oneshot" isWarningTriggered={!isFolderOneshotDir} getFolderPath={(): string => oneshotFolder} setFolderPath={(folderPath: string) => setOneshotFolder(folderPath)} openFolderPathSelector={oneshotFolderPathSelector} />
+                <FolderSelector folderNotValidWarningMessage="This folder doesn't contain oneshot" isWarningTriggered={!isFolderOneshotDir} getFolderPath={(): string => oneshotFolder} setFolderPath={(folderPath: string) => setOneshotFolder(folderPath)} openFolderPathSelector={oneshotFolderPathSelector} />
                 <TextButton text="Confirm" className="oneshot-folder-path-confirm-button" onClick={oneshotFolderPathConfirmClicked} />
             </Modal>
         </div>
