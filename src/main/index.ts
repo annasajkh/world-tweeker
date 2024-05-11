@@ -6,7 +6,7 @@ import { app, shell, BrowserWindow, ipcMain, IpcMainInvokeEvent, OpenDialogRetur
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { isSettingsFileExist, openOneshotFolder, readSettingsFile, writeSettingsFile } from "./oneshot"
+import { isFolderOneshotDir, isSettingsFileExist, openOneshotFolder, readSettingsFile, runOneshot, writeSettingsFile } from "./functions"
 
 function createWindow(): void {
     // Create the browser window.
@@ -56,10 +56,12 @@ app.whenReady().then(() => {
         optimizer.watchWindowShortcuts(window)
     })
 
-    createWindow()
+    createWindow();
 
+    ipcMain.handle('runOneshot', async (_event: IpcMainInvokeEvent): Promise<void> => await runOneshot());
     ipcMain.handle('openOneshotFolder', async (_event: IpcMainInvokeEvent): Promise<OpenDialogReturnValue> => await openOneshotFolder());
     ipcMain.handle('isSettingsFileExist', async (_event: IpcMainInvokeEvent): Promise<boolean> => await isSettingsFileExist());
+    ipcMain.handle('isFolderOneshotDir', async (_event: IpcMainInvokeEvent, dirPath: string): Promise<boolean> => await isFolderOneshotDir(dirPath));
     ipcMain.handle('writeSettingsFile', async (_event: IpcMainInvokeEvent, settingsJson: string): Promise<void> => await writeSettingsFile(settingsJson));
     ipcMain.handle('readSettingsFile', async (_event: IpcMainInvokeEvent): Promise<string | null> => await readSettingsFile());
 

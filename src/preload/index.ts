@@ -1,13 +1,13 @@
 /* eslint-disable prettier/prettier */
 import { OpenDialogReturnValue, contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import { runOneshot } from "../main/oneshot"
 
 // Custom APIs for renderer
 const api = {
-    runOneshot: runOneshot,
+    runOneshot: async() : Promise<void> => await ipcRenderer.invoke("runOneshot"),
     openOneshotFolder: async (): Promise<OpenDialogReturnValue> => await ipcRenderer.invoke("openOneshotFolder"),
     isSettingsFileExist: async (): Promise<boolean> => await ipcRenderer.invoke("isSettingsFileExist"),
+    isFolderOneshotDir: async (dirPath: string): Promise<boolean> => await ipcRenderer.invoke("isFolderOneshotDir", dirPath),
     writeSettingsFile: async (settingsJson: string): Promise<void> => await ipcRenderer.invoke("writeSettingsFile", settingsJson),
     readSettingsFile: async (): Promise<string | null> => await ipcRenderer.invoke("readSettingsFile")
 }

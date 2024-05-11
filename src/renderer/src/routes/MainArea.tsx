@@ -10,7 +10,8 @@ import TextButton from "@renderer/components/TextButton";
 
 export default function MainArea(): JSX.Element {
     const [openModal, setOpenModal] = useState(false);
-    const [oneshotFolder, setOneshotFolder] = useState<string>('')
+    const [oneshotFolder, setOneshotFolder] = useState('')
+    const [isFolderOneshotDir, setIsFolderOneshotDir] = useState(false);
 
     useEffect(() => {
         async function isSettingsFileExist(): Promise<void> {
@@ -22,11 +23,12 @@ export default function MainArea(): JSX.Element {
     }, [])
 
     async function oneshotFolderPathSelector(): Promise<void> {
-        const result: any = await window.api.openOneshotFolder()
+        const result: any = await window.api.openOneshotFolder();
         const path: string = result.filePaths[0];
 
         if (path !== undefined) {
-            setOneshotFolder(path)
+            setOneshotFolder(path);
+            setIsFolderOneshotDir(await window.api.isFolderOneshotDir(path));
         }
     }
 
@@ -45,8 +47,8 @@ export default function MainArea(): JSX.Element {
             <Topbar />
 
             <Modal className="oneshot-folder-not-selected-modal" openModal={openModal} closeModal={() => setOpenModal(false)}>
-                <p className="oneshot-folder-not-selected-warning">Please select Oneshot folder that is located in SteamLibrary\steamapps\common</p>
-                <FolderSelector getFolderPath={(): string => oneshotFolder} setFolderPath={(folderPath: string) => setOneshotFolder(folderPath)} openFolderPathSelector={oneshotFolderPathSelector} />
+                <p className="oneshot-folder-not-selected-warning">Please select Oneshot folder that is located in steamapps/common</p>
+                <FolderSelector folderNotValidWarningMessage="It seems this folder doesn't contain oneshot" isWarningTriggered={!isFolderOneshotDir} getFolderPath={(): string => oneshotFolder} setFolderPath={(folderPath: string) => setOneshotFolder(folderPath)} openFolderPathSelector={oneshotFolderPathSelector} />
                 <TextButton text="Confirm" className="oneshot-folder-path-confirm-button" onClick={oneshotFolderPathConfirmClicked} />
             </Modal>
         </div>

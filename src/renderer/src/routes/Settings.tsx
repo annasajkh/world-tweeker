@@ -55,7 +55,7 @@ export default function Settings(): JSX.Element {
                 <div className="settings-items">
                     <div className="settings-items-centered">
                         <p className="oneshot-folder-path-description">Oneshot folder path</p>
-                        <FolderSelector getFolderPath={(): string => oneshotFolder} setFolderPath={(folderPath: string) => setOneshotFolder(folderPath)} openFolderPathSelector={oneshotFolderPathSelector} />
+                        <FolderSelector folderNotValidWarningMessage="It seems this folder doesn't contain oneshot" isWarningTriggered={true} getFolderPath={(): string => oneshotFolder} setFolderPath={(folderPath: string) => setOneshotFolder(folderPath)} openFolderPathSelector={oneshotFolderPathSelector} />
                     </div>
                 </div>
             </div>
