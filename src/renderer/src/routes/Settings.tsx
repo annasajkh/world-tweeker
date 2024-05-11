@@ -6,7 +6,6 @@ import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import FolderSelector from "@renderer/components/FolderSelector"
 import { SettingsData } from "@renderer/utils/interfaces"
-import TextButton from "@renderer/components/TextButton"
 
 export default function Settings(): JSX.Element {
     const [oneshotFolder, setOneshotFolder] = useState<string>('')
@@ -27,9 +26,9 @@ export default function Settings(): JSX.Element {
     }, [])
 
 
-    async function oneshotFolderPathConfirmClicked(): Promise<void> {
+    async function oneshotFolderWriteSettingsFile(fileContent: string): Promise<void> {
         const settingsJson: SettingsData = {
-            oneshotPath: oneshotFolder
+            oneshotPath: fileContent
         }
 
         await window.api.writeSettingsFile(JSON.stringify(settingsJson));
@@ -41,7 +40,8 @@ export default function Settings(): JSX.Element {
         const path: string = result.filePaths[0];
 
         if (path !== undefined) {
-            setOneshotFolder(path)
+            setOneshotFolder(path);
+            await oneshotFolderWriteSettingsFile(path);
         }
     }
 
@@ -56,7 +56,6 @@ export default function Settings(): JSX.Element {
                     <div className="settings-items-centered">
                         <p className="oneshot-folder-path-description">Oneshot folder path</p>
                         <FolderSelector getFolderPath={(): string => oneshotFolder} setFolderPath={(folderPath: string) => setOneshotFolder(folderPath)} openFolderPathSelector={oneshotFolderPathSelector} />
-                        <TextButton text="Confirm" className="oneshot-folder-path-confirm-button" onClick={oneshotFolderPathConfirmClicked} />
                     </div>
                 </div>
             </div>
