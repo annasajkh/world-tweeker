@@ -8,21 +8,23 @@ import FolderSelector from "@renderer/components/FolderSelector"
 import { SettingsData } from "@renderer/utils/interfaces"
 
 export default function Settings(): JSX.Element {
-    const [oneshotFolder, setOneshotFolder] = useState<string>('')
+    const [oneshotFolder, setOneshotFolder] = useState<string>('');
+    const [isFolderOneshotDir, setIsFolderOneshotDir] = useState(true);
 
     useEffect(() => {
-        async function getOneshotFolderInternal(): Promise<void> {
+        async function setup(): Promise<void> {
             if (await window.api.isSettingsFileExist()) {
                 const settings: string = await window.api.readSettingsFile();
                 const settingsJson: SettingsData = JSON.parse(settings);
 
                 setOneshotFolder(settingsJson["oneshotPath"]);
+                setIsFolderOneshotDir(await window.api.isFolderOneshotDir(settingsJson["oneshotPath"]));
             } else {
                 throw new Error("File doesn't exist");
             }
         }
-        
-        getOneshotFolderInternal();
+
+        setup();
     }, [])
 
 
@@ -42,6 +44,7 @@ export default function Settings(): JSX.Element {
         if (path !== undefined) {
             setOneshotFolder(path);
             await oneshotFolderWriteSettingsFile(path);
+            setIsFolderOneshotDir(await window.api.isFolderOneshotDir(path));
         }
     }
 
@@ -55,7 +58,7 @@ export default function Settings(): JSX.Element {
                 <div className="settings-items">
                     <div className="settings-items-centered">
                         <p className="oneshot-folder-path-description">Oneshot folder path</p>
-                        <FolderSelector folderNotValidWarningMessage="It seems this folder doesn't contain oneshot" isWarningTriggered={true} getFolderPath={(): string => oneshotFolder} setFolderPath={(folderPath: string) => setOneshotFolder(folderPath)} openFolderPathSelector={oneshotFolderPathSelector} />
+                        <FolderSelector folderNotValidWarningMessage="It seems this folder doesn't contain oneshot" isWarningTriggered={!isFolderOneshotDir} getFolderPath={(): string => oneshotFolder} setFolderPath={(folderPath: string) => setOneshotFolder(folderPath)} openFolderPathSelector={oneshotFolderPathSelector} />
                     </div>
                 </div>
             </div>

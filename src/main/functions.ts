@@ -50,7 +50,7 @@ export async function openOneshotFolder(): Promise<OpenDialogReturnValue> {
 export async function isFolderOneshotDir(dirPath: string): Promise<boolean> {
     const foldersAndFiles: string[] = ["Audio", "Data", "Fonts", "Graphics", "Languages", "Wallpaper", "steamshim", "oneshot"];
     const foldersAndFilesInDirPath: string[] = [];
-    
+
     let checkCount: number = 0;
 
     fs.readdirSync(dirPath).forEach(file => {
@@ -61,6 +61,7 @@ export async function isFolderOneshotDir(dirPath: string): Promise<boolean> {
         for(const folderOrFileNameInDirPath of foldersAndFilesInDirPath) {
             if (folderOrFileNameInDirPath.includes(folderOrFileName)) {
                 checkCount++;
+                break;
             }
         }
     }
