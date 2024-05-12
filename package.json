@@ -23,7 +23,6 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.0",
     "@electron-toolkit/utils": "^3.0.0",
-    "@headlessui/react": "^2.0.3",
     "electron-updater": "^6.1.7",
     "react-router-dom": "^6.23.0"
   },

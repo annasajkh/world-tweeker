@@ -11,7 +11,6 @@ interface Props {
 
 
 export default function Topbar({ runButtonClicked }: Props): JSX.Element {
-
     return (
         <div className="top-bar">
             <RunButton onClick={runButtonClicked} />

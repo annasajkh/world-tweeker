@@ -1,4 +1,17 @@
 /* eslint-disable prettier/prettier */
-export type SettingsData = {
-    oneshotPath: string
+export interface SettingsData {
+    oneshotPath: string;
+}
+
+export interface ModData {
+    name: string;
+    iconPath: string | null;
+    author: string | null;
+    modPath: string;
+}
+
+export interface ModDataJSON {
+    name: string;
+    iconPath: string;
+    author: string;
 }

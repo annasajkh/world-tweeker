@@ -39,7 +39,7 @@ export default function Settings(): JSX.Element {
 
 
     async function oneshotFolderPathSelector(): Promise<void> {
-        const result: any = await window.api.openOneshotFolder()
+        const result: any = await window.api.openOneshotFolderSelector()
         const path: string = result.filePaths[0];
 
         if (path !== undefined) {

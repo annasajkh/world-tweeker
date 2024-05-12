@@ -27,7 +27,14 @@ export default function MainArea(): JSX.Element {
                 const settingsJson: SettingsData = JSON.parse(settings);
 
                 setOneshotFolder(settingsJson["oneshotPath"]);
-                setOpenModal(!(await window.api.isFolderOneshotDir(settingsJson["oneshotPath"])));
+
+                const isOneshotFolder: boolean = await window.api.isFolderOneshotDir(settingsJson["oneshotPath"]);
+
+                if (isOneshotFolder) {
+                    setOpenModal(!isOneshotFolder);
+                    await window.api.loadMods();
+                }
+
             } else {
                 setOpenModal(!isFileExist);
             }
@@ -38,7 +45,7 @@ export default function MainArea(): JSX.Element {
     }, [])
 
     async function oneshotFolderPathSelector(): Promise<void> {
-        const result: any = await window.api.openOneshotFolder();
+        const result: any = await window.api.openOneshotFolderSelector();
         const path: string = result.filePaths[0];
 
         if (path !== undefined) {
@@ -55,7 +62,8 @@ export default function MainArea(): JSX.Element {
     
             await window.api.writeSettingsFile(JSON.stringify(settingsJson));
             
-            setOpenModal(false);   
+            setOpenModal(false);
+            await window.api.loadMods();
         }
     }
 

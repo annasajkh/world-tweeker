@@ -2,20 +2,19 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { app, shell, BrowserWindow, ipcMain, IpcMainInvokeEvent, OpenDialogReturnValue } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, IpcMainInvokeEvent, OpenDialogReturnValue, ipcRenderer } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import icon from '../../resources/icon.png?asset'
-import { isFolderOneshotDir, isSettingsFileExist, openOneshotFolder, readSettingsFile, runOneshot, writeSettingsFile } from "./functions"
+import { getOneshotFolder, isFolderOneshotDir, isSettingsFileExist, loadMods, openOneshotFolderSelector, readSettingsFile, runOneshot, writeSettingsFile } from "./main"
 
 function createWindow(): void {
     // Create the browser window.
     const mainWindow = new BrowserWindow({
+        icon:  join(__dirname, '../../resources/icon.ico'),
         width: 960,
         height: 540,
         show: false,
         autoHideMenuBar: true,
-        ...(process.platform === 'linux' ? { icon } : {}),
         webPreferences: {
             preload: join(__dirname, '../preload/index.js'),
             sandbox: false
@@ -59,12 +58,14 @@ app.whenReady().then(() => {
     createWindow();
 
     ipcMain.handle('runOneshot', async (_event: IpcMainInvokeEvent): Promise<void> => await runOneshot());
-    ipcMain.handle('openOneshotFolder', async (_event: IpcMainInvokeEvent): Promise<OpenDialogReturnValue> => await openOneshotFolder());
+    ipcMain.handle('openOneshotFolderSelector', async (_event: IpcMainInvokeEvent): Promise<OpenDialogReturnValue> => await openOneshotFolderSelector());
     ipcMain.handle('isSettingsFileExist', async (_event: IpcMainInvokeEvent): Promise<boolean> => await isSettingsFileExist());
     ipcMain.handle('isFolderOneshotDir', async (_event: IpcMainInvokeEvent, dirPath: string): Promise<boolean> => await isFolderOneshotDir(dirPath));
     ipcMain.handle('writeSettingsFile', async (_event: IpcMainInvokeEvent, settingsJson: string): Promise<void> => await writeSettingsFile(settingsJson));
     ipcMain.handle('readSettingsFile', async (_event: IpcMainInvokeEvent): Promise<string | null> => await readSettingsFile());
-
+    ipcMain.handle('loadMods', async (_event: IpcMainInvokeEvent): Promise<void> => await loadMods());
+    ipcMain.handle('getOneshotFolder', async (_event: IpcMainInvokeEvent): Promise<string> => await getOneshotFolder());
+    
     app.on('activate', function () {
         // On macOS it"s common to re-create a window in the app when the
         // dock icon is clicked and there are no other windows open.
