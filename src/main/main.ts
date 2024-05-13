@@ -99,14 +99,14 @@ export async function isFolderOneshotDir(dirPath: string): Promise<boolean> {
 export async function getModConfigs(): Promise<ModData[]> {
     const modConfigs: ModData[] = [];
 
-    const modDirectory: string = `${await getOneshotFolder()}\\Mods`;
+    const modDirectory: string = path.join(`${await getOneshotFolder()}`, "Mods");
 
     if (!fs.existsSync(modDirectory)) {
         fs.mkdirSync(modDirectory);
     }
 
     fs.readdirSync(modDirectory).forEach(modFolder => {
-        const individualModPath: string = `${modDirectory}\\${modFolder}`;
+        const individualModPath: string = path.join(`${modDirectory}`,`${modFolder}`);
 
         if (!fs.lstatSync(individualModPath).isDirectory()) {
             return;
@@ -123,8 +123,8 @@ export async function getModConfigs(): Promise<ModData[]> {
         fs.readdirSync(individualModPath).forEach(modContentName => {
 
             if (modContentName === 'mod_config.json') {
-                const modConfigJSON: ModDataJSON = JSON.parse(fs.readFileSync(`${individualModPath}\\mod_config.json`, 'utf8'));
-                const modIcon = fs.readFileSync(`${individualModPath}\\${modConfigJSON.iconPath}`);
+                const modConfigJSON: ModDataJSON = JSON.parse(fs.readFileSync(path.join(`${individualModPath}`, "mod_config.json"), 'utf8'));
+                const modIcon = fs.readFileSync(path.join(`${individualModPath}`,`${modConfigJSON.iconPath}`));
 
                 modConfigs.push({
                     modPath: individualModPath,
