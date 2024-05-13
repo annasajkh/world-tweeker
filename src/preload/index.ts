@@ -1,6 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { OpenDialogReturnValue, contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import { ModData } from "../renderer/src/utils/interfaces"
 
 // Custom APIs for renderer
 const api = {
@@ -10,8 +11,8 @@ const api = {
     isFolderOneshotDir: async (dirPath: string): Promise<boolean> => await ipcRenderer.invoke("isFolderOneshotDir", dirPath),
     writeSettingsFile: async (settingsJson: string): Promise<void> => await ipcRenderer.invoke("writeSettingsFile", settingsJson),
     readSettingsFile: async (): Promise<string | null> => await ipcRenderer.invoke("readSettingsFile"),
-    loadMods: async() : Promise<void> => await ipcRenderer.invoke("loadMods"),
     getOneshotFolder: async() : Promise<string> => await ipcRenderer.invoke("getOneshotFolder"),
+    getModConfigs: async() : Promise<ModData[]> => await ipcRenderer.invoke("getModConfigs")
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

@@ -2,15 +2,18 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { app, shell, BrowserWindow, ipcMain, IpcMainInvokeEvent, OpenDialogReturnValue, ipcRenderer } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, IpcMainInvokeEvent, OpenDialogReturnValue } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { getOneshotFolder, isFolderOneshotDir, isSettingsFileExist, loadMods, openOneshotFolderSelector, readSettingsFile, runOneshot, writeSettingsFile } from "./main"
+import { getModConfigs, getOneshotFolder, isFolderOneshotDir, isSettingsFileExist, openOneshotFolderSelector, readSettingsFile, runOneshot, writeSettingsFile } from "./main"
+import { ModData } from "../renderer/src/utils/interfaces"
 
 function createWindow(): void {
     // Create the browser window.
     const mainWindow = new BrowserWindow({
         icon:  join(__dirname, '../../resources/icon.ico'),
+        minWidth: 16 * 17,
+        minHeight: 9 * 17,
         width: 960,
         height: 540,
         show: false,
@@ -63,8 +66,8 @@ app.whenReady().then(() => {
     ipcMain.handle('isFolderOneshotDir', async (_event: IpcMainInvokeEvent, dirPath: string): Promise<boolean> => await isFolderOneshotDir(dirPath));
     ipcMain.handle('writeSettingsFile', async (_event: IpcMainInvokeEvent, settingsJson: string): Promise<void> => await writeSettingsFile(settingsJson));
     ipcMain.handle('readSettingsFile', async (_event: IpcMainInvokeEvent): Promise<string | null> => await readSettingsFile());
-    ipcMain.handle('loadMods', async (_event: IpcMainInvokeEvent): Promise<void> => await loadMods());
     ipcMain.handle('getOneshotFolder', async (_event: IpcMainInvokeEvent): Promise<string> => await getOneshotFolder());
+    ipcMain.handle('getModConfigs', async (_event: IpcMainInvokeEvent): Promise<ModData[]> => await getModConfigs());
     
     app.on('activate', function () {
         // On macOS it"s common to re-create a window in the app when the

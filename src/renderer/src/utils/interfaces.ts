@@ -5,7 +5,7 @@ export interface SettingsData {
 
 export interface ModData {
     name: string;
-    iconPath: string | null;
+    iconBase64: string | null;
     author: string | null;
     modPath: string;
 }

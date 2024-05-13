@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prettier/prettier */
+
 import { spawn } from 'child_process'
 import os from 'os'
 import { OpenDialogReturnValue, app, dialog } from "electron"
@@ -7,7 +8,6 @@ import fs from 'fs';
 import path from "path";
 import { ModData, ModDataJSON, SettingsData } from "../renderer/src/utils/interfaces";
 
-const mods: ModData[] = [];
 
 export async function runOneshot(): Promise<void> {
     switch (os.platform()) {
@@ -48,7 +48,7 @@ export async function readSettingsFile(): Promise<string> {
 
 export async function getOneshotFolder(): Promise<string> {
     const isFileExist = await isSettingsFileExist();
-            
+
     if (isFileExist) {
         const settings: string = await readSettingsFile();
         const settingsJson: SettingsData = JSON.parse(settings);
@@ -84,8 +84,8 @@ export async function isFolderOneshotDir(dirPath: string): Promise<boolean> {
         foldersAndFilesInDirPath.push(file);
     });
 
-    for(const folderOrFileName of foldersAndFiles) {
-        for(const folderOrFileNameInDirPath of foldersAndFilesInDirPath) {
+    for (const folderOrFileName of foldersAndFiles) {
+        for (const folderOrFileNameInDirPath of foldersAndFilesInDirPath) {
             if (folderOrFileNameInDirPath.includes(folderOrFileName)) {
                 checkCount++;
                 break;
@@ -96,22 +96,23 @@ export async function isFolderOneshotDir(dirPath: string): Promise<boolean> {
     return checkCount == foldersAndFiles.length;
 }
 
-// if oneshot folder is valid we can start adding mods now
-export async function loadMods(): Promise<void> {
-    const modDirectory: string = `${await getOneshotFolder()}/Mods`;
+export async function getModConfigs(): Promise<ModData[]> {
+    const modConfigs: ModData[] = [];
+
+    const modDirectory: string = `${await getOneshotFolder()}\\Mods`;
 
     if (!fs.existsSync(modDirectory)) {
         fs.mkdirSync(modDirectory);
     }
 
     fs.readdirSync(modDirectory).forEach(modFolder => {
-        const individualModPath: string = `${modDirectory}/${modFolder}`;
+        const individualModPath: string = `${modDirectory}\\${modFolder}`;
 
-        if (!fs.lstatSync(individualModPath).isDirectory()){
+        if (!fs.lstatSync(individualModPath).isDirectory()) {
             return;
         }
 
-        for (const modData of mods) {
+        for (const modData of modConfigs) {
             if (modData.modPath === individualModPath) {
                 return;
             }
@@ -120,14 +121,15 @@ export async function loadMods(): Promise<void> {
         let isModConfigExist: boolean = false;
 
         fs.readdirSync(individualModPath).forEach(modContentName => {
-            
+
             if (modContentName === 'mod_config.json') {
-                const modConfigJSON: ModDataJSON = JSON.parse(fs.readFileSync(`${individualModPath}/mod_config.json`, 'utf8'));
-                
-                mods.push({
+                const modConfigJSON: ModDataJSON = JSON.parse(fs.readFileSync(`${individualModPath}\\mod_config.json`, 'utf8'));
+                const modIcon = fs.readFileSync(`${individualModPath}\\${modConfigJSON.iconPath}`);
+
+                modConfigs.push({
                     modPath: individualModPath,
                     name: modConfigJSON.name,
-                    iconPath: modConfigJSON.iconPath,
+                    iconBase64:`data:image/jpeg;base64,${modIcon.toString('base64')}` ,
                     author: modConfigJSON.author,
                 })
 
@@ -136,14 +138,14 @@ export async function loadMods(): Promise<void> {
         });
 
         if (!isModConfigExist) {
-            mods.push({
+            modConfigs.push({
                 modPath: individualModPath,
                 name: modFolder,
-                iconPath: null,
+                iconBase64: null,
                 author: null,
-            })   
+            })
         }
     });
 
-    console.log(mods[0]);
+    return modConfigs;
 }

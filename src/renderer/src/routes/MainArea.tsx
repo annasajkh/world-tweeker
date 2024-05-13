@@ -6,22 +6,29 @@ import './MainArea.css'
 import { useEffect, useState } from "react";
 import Modal from "@renderer/components/Modal";
 import FolderSelector from "@renderer/components/FolderSelector";
-import { SettingsData } from "@renderer/utils/interfaces";
+import { ModData, SettingsData } from "@renderer/utils/interfaces";
 import TextButton from "@renderer/components/TextButton";
+import ModItem from "@renderer/components/ModItem";
 
 export default function MainArea(): JSX.Element {
     const [openModal, setOpenModal] = useState(false);
     const [oneshotFolder, setOneshotFolder] = useState('')
     const [isFolderOneshotDir, setIsFolderOneshotDir] = useState(false);
+    const [modConfigs, setModConfigs] = useState<ModData[]>([]);
 
     async function runButtonClicked(): Promise<void> {
         await window.api.runOneshot();
     }
 
+
+    async function constructListUI(): Promise<void> {
+        setModConfigs(await window.api.getModConfigs());
+    }
+
     useEffect(() => {
         async function isSettingsFileExist(): Promise<void> {
             const isFileExist = await window.api.isSettingsFileExist();
-            
+
             if (isFileExist) {
                 const settings: string = await window.api.readSettingsFile();
                 const settingsJson: SettingsData = JSON.parse(settings);
@@ -32,13 +39,12 @@ export default function MainArea(): JSX.Element {
 
                 if (isOneshotFolder) {
                     setOpenModal(!isOneshotFolder);
-                    await window.api.loadMods();
+                    await constructListUI();
                 }
 
             } else {
                 setOpenModal(!isFileExist);
             }
-
         }
 
         isSettingsFileExist();
@@ -59,17 +65,24 @@ export default function MainArea(): JSX.Element {
             const settingsJson: SettingsData = {
                 oneshotPath: oneshotFolder
             }
-    
+
             await window.api.writeSettingsFile(JSON.stringify(settingsJson));
-            
             setOpenModal(false);
-            await window.api.loadMods();
+            await constructListUI();
         }
     }
 
     return (
         <div className="main-area">
             <Topbar runButtonClicked={runButtonClicked} />
+
+            <div className="mod-list-container">
+                <div className="mod-list">
+                    {modConfigs.map((modConfig: ModData) => (
+                        <ModItem key={modConfig.modPath} iconBase64={modConfig.iconBase64 != null ? modConfig.iconBase64 : null} name={modConfig.name} author={modConfig.author != null ? modConfig.author : null} />
+                    ))}
+                </div>
+            </div>
 
             <Modal haveCloseButton={false} canClose={isFolderOneshotDir} className="oneshot-folder-not-selected-modal" openModal={openModal} closeModal={() => setOpenModal(false)}>
                 <p className="oneshot-folder-not-selected-warning">Please select Oneshot folder located in steamapps/common</p>

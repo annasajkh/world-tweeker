@@ -1,5 +1,5 @@
 .folder-selector {
-
+    user-select: none;
 }
 
 .folder-selector-content {
