@@ -18,14 +18,12 @@
     grid-template-rows: repeat(auto-fill, minmax(290px, 290px));
     grid-template-columns: repeat(auto-fill, minmax(210px, 210px));
     gap: 16px;
-}
-
-.oneshot-folder-not-selected-modal {
-
+    overflow-x: hidden;
 }
 
 .oneshot-folder-not-selected-warning {
     margin-bottom: 16px;
+    user-select: none;
 }
 
 .oneshot-folder-path-confirm-button {

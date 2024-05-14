@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-
+import React from 'react';
 import './IconButton.css'
 
 interface Props {
@@ -8,10 +8,15 @@ interface Props {
     onClick: () => void
 }
 
-export default function IconButton({ className, src, onClick }: Props): JSX.Element {
+const IconButton = React.forwardRef<HTMLDivElement, Props>((props, ref) => {
+    const { className, src, onClick } = props;
     return (
-        <div className={`icon-button ${className}`} onClick={onClick}>
+        <div ref={ref} className={`icon-button ${className}`} onClick={onClick}>
             <img src={src} className="icon-button-image" />
         </div>
     )
-}
+})
+
+IconButton.displayName = 'IconButton';
+
+export default IconButton;

@@ -11,8 +11,14 @@ const api = {
     isFolderOneshotDir: async (dirPath: string): Promise<boolean> => await ipcRenderer.invoke("isFolderOneshotDir", dirPath),
     writeSettingsFile: async (settingsJson: string): Promise<void> => await ipcRenderer.invoke("writeSettingsFile", settingsJson),
     readSettingsFile: async (): Promise<string | null> => await ipcRenderer.invoke("readSettingsFile"),
-    getOneshotFolder: async() : Promise<string> => await ipcRenderer.invoke("getOneshotFolder"),
-    getModConfigs: async() : Promise<ModData[]> => await ipcRenderer.invoke("getModConfigs")
+    getOneshotFolder: async(): Promise<string> => await ipcRenderer.invoke("getOneshotFolder"),
+    getModConfigs: async(): Promise<Map<string, ModData>> => await ipcRenderer.invoke("getModConfigs"),
+    setupModConfigs: async() : Promise<void> => await ipcRenderer.invoke("setupModConfigs"),
+    getModConfig: async(key: string): Promise<ModData> => await ipcRenderer.invoke("getModConfig", key),
+    setModConfig: async(key: string, config: ModData): Promise<void> => await ipcRenderer.invoke("setModConfig", key, config),
+    setModEnabled: async(key: string, enabled: boolean): Promise<void> => await ipcRenderer.invoke("setModEnabled", key, enabled),
+    openFolderInFileManager: async(folderPath: string) : Promise<void> => await ipcRenderer.invoke("openFolderInFileManager", folderPath),
+    deleteMod: async(modPath: string) : Promise<void> => await ipcRenderer.invoke("deleteMod", modPath)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

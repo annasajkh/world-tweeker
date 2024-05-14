@@ -11,17 +11,16 @@
 .folder-selector-not-valid-warning {
     color: red;
     font-size: 12px;
-    user-select: none;
 }
 
 .folder-selector-input {
+    background-color: var(--item-color);
+    border: 1px solid var(--border-color);
     color: white;
     padding-left: 6px;
     padding-right: 6px;
     border-radius: 2px;
     margin-right: 8px;
-    background-color: var(--item-color);
-    border: 1px solid var(--border-color);
     height: 32px;
     width: 512px;
     pointer-events: none;
