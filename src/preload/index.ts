@@ -18,7 +18,8 @@ const api = {
     setModConfig: async(key: string, config: ModData): Promise<void> => await ipcRenderer.invoke("setModConfig", key, config),
     setModEnabled: async(key: string, enabled: boolean): Promise<void> => await ipcRenderer.invoke("setModEnabled", key, enabled),
     openFolderInFileManager: async(folderPath: string) : Promise<void> => await ipcRenderer.invoke("openFolderInFileManager", folderPath),
-    deleteMod: async(modPath: string) : Promise<void> => await ipcRenderer.invoke("deleteMod", modPath)
+    deleteMod: async(modPath: string) : Promise<void> => await ipcRenderer.invoke("deleteMod", modPath),
+    importMod: async() : Promise<void> => await ipcRenderer.invoke("importMod"),
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

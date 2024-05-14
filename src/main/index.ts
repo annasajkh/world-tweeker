@@ -5,15 +5,15 @@
 import { app, shell, BrowserWindow, ipcMain, IpcMainInvokeEvent, OpenDialogReturnValue } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { deleteMod, getModConfig, getModConfigs, getOneshotFolder, isFolderOneshotDir, isSettingsFileExist, openFolderInFileManager, openOneshotFolderSelector, readSettingsFile, runOneshot, setModConfig, setModEnabled, setupModConfigs, writeSettingsFile } from "./main"
+import { deleteMod, getModConfig, getModConfigs, getOneshotFolder, importMod, isFolderOneshotDir, isSettingsFileExist, openFolderInFileManager, openOneshotFolderSelector, readSettingsFile, runOneshot, setModConfig, setModEnabled, setupModConfigs, writeSettingsFile } from "./main"
 import { ModData } from "../renderer/src/utils/interfaces"
 
 function createWindow(): void {
     // Create the browser window.
     const mainWindow = new BrowserWindow({
         icon:  join(__dirname, '../../resources/icon.ico'),
-        minWidth: 16 * 17,
-        minHeight: 9 * 17,
+        minWidth: 16 * 24,
+        minHeight: 9 * 24,
         width: 960,
         height: 540,
         show: false,
@@ -74,6 +74,7 @@ app.whenReady().then(() => {
     ipcMain.handle('setModEnabled', async (_event: IpcMainInvokeEvent, key: string, enabled: boolean): Promise<void> => await setModEnabled(key, enabled));
     ipcMain.handle('openFolderInFileManager', async (_event: IpcMainInvokeEvent, folderPath: string): Promise<void> => await openFolderInFileManager(folderPath));
     ipcMain.handle('deleteMod', async (_event: IpcMainInvokeEvent, modPath: string): Promise<void> => await deleteMod(modPath));
+    ipcMain.handle('importMod', async (_event: IpcMainInvokeEvent): Promise<void> => await importMod());
     
     app.on('activate', function () {
         // On macOS it"s common to re-create a window in the app when the

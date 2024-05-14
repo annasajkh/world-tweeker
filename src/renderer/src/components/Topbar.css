@@ -1,13 +1,29 @@
 .top-bar {
     background-color: var(--item-color);
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
     height: 30px;
     padding-top: 8px;
     padding-bottom: 8px;
     padding-left: 8px;
     padding-right: 8px;
     border-bottom: 1px solid var(--border-color);
+}
+
+.top-bar-left {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(136px, 136px));
+    gap: 8px;
+}
+
+.run-oneshot-button {
+    grid-columns: 0;
+}
+
+.import-mod-button {
+    grid-columns: 1;
+}
+
+.settings-button {
+    position: absolute;
+    top: 8px;
+    right: 8px;
 }

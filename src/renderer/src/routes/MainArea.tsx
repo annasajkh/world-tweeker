@@ -21,6 +21,10 @@ export default function MainArea(): JSX.Element {
         await window.api.runOneshot();
     }
 
+    async function importModClicked(): Promise<void> {
+        await window.api.importMod();
+    }
+
     async function constructListUI(): Promise<void> {
         await window.api.setupModConfigs();
         setModConfigs(await window.api.getModConfigs());
@@ -87,7 +91,7 @@ export default function MainArea(): JSX.Element {
 
     return (
         <div className="main-area">
-            <Topbar runButtonClicked={runButtonClicked} />
+            <Topbar runButtonClicked={runButtonClicked} importModClicked={importModClicked} />
 
             <div className="mod-list-container">
                 <div className="mod-list">

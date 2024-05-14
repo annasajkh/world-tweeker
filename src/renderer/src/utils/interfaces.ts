@@ -12,6 +12,7 @@ export interface ModData {
 }
 
 export interface ModDataJSON {
+    enabled: boolean;
     name: string;
     iconPath: string;
     author: string;

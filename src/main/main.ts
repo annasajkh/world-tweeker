@@ -8,6 +8,7 @@ import fs from 'fs';
 import path from "path";
 import { ModData, ModDataJSON, SettingsData } from "../renderer/src/utils/interfaces";
 import { shell } from 'electron';
+const extract = require('extract-zip');
 
 let modConfigs: Map<string, ModData> = new Map<string, ModData>();
 
@@ -25,6 +26,39 @@ export async function runOneshot(): Promise<void> {
             throw new Error('Unsupported platform')
         }
     }
+}
+
+export async function importMod(): Promise<void> {
+    const modFile = await dialog.showOpenDialog({
+        filters: [
+            { name: "Zip", extensions: ["zip"] }
+        ],
+        properties: ['openFile', 'multiSelections']
+    });
+
+    if (modFile.canceled) {
+        return;
+    }
+
+    let separator: string = "";
+
+    switch (os.platform()) {
+        case 'win32': {
+            separator = path.win32.sep;
+            break;
+        }
+        case 'linux': {
+            separator = path.posix.sep;
+            break;
+        }
+        default: {
+            throw new Error('Unsupported platform')
+        }
+    }
+
+    extract(modFile.filePaths[0], { dir: path.join(`${await getOneshotFolder()}`, "Mods", modFile.filePaths[0].split(separator).at(-1)!.split(".")[0]) }, (error): void => {
+        console.error(error);
+    });
 }
 
 export async function isSettingsFileExist(): Promise<boolean> {
@@ -98,7 +132,7 @@ export async function isFolderOneshotDir(dirPath: string): Promise<boolean> {
     return checkCount == foldersAndFiles.length;
 }
 
-export async function openFolderInFileManager(folderPath: string) : Promise<void> {
+export async function openFolderInFileManager(folderPath: string): Promise<void> {
     shell.openPath(folderPath);
 }
 
@@ -133,7 +167,7 @@ export async function setupModConfigs(): Promise<void> {
     }
 
     fs.readdirSync(modDirectory).forEach(modFolder => {
-        const individualModPath: string = path.join(`${modDirectory}`,`${modFolder}`);
+        const individualModPath: string = path.join(`${modDirectory}`, `${modFolder}`);
 
         if (!fs.lstatSync(individualModPath).isDirectory()) {
             return;
@@ -150,13 +184,13 @@ export async function setupModConfigs(): Promise<void> {
         fs.readdirSync(individualModPath).forEach(modContentName => {
             if (modContentName === 'mod_config.json') {
                 const modConfigJSON: ModDataJSON = JSON.parse(fs.readFileSync(path.join(`${individualModPath}`, "mod_config.json"), 'utf8'));
-                const modIcon = fs.readFileSync(path.join(`${individualModPath}`,`${modConfigJSON.iconPath}`));
+                const modIcon = fs.readFileSync(path.join(`${individualModPath}`, `${modConfigJSON.iconPath}`));
 
                 modConfigs.set(individualModPath, {
                     modPath: individualModPath,
                     enabled: true,
                     name: modConfigJSON.name,
-                    iconBase64:`data:image/jpeg;base64,${modIcon.toString('base64')}` ,
+                    iconBase64: `data:image/jpeg;base64,${modIcon.toString('base64')}`,
                     author: modConfigJSON.author,
                 })
 
