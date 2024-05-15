@@ -5,7 +5,7 @@
 import { app, shell, BrowserWindow, ipcMain, IpcMainInvokeEvent, OpenDialogReturnValue } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { deleteMod, getModConfig, getModConfigs, getOneshotFolder, importMod, isFolderOneshotDir, isSettingsFileExist, openFolderInFileManager, openOneshotFolderSelector, readSettingsFile, runOneshot, setModConfig, setModEnabled, setupModConfigs, writeSettingsFile } from "./main"
+import { deleteMod, getModConfig, getModConfigs, getOneshotFolder, importMod, isFolderOneshotDir, isSettingsFileExist, openFolderInFileManager, openOneshotFolderSelector, readSettingsFile, runOneshot, setModConfig, setModEnabled, setupModConfigs, updateEvery100ms, writeSettingsFile } from "./main"
 import { ModData } from "../renderer/src/utils/interfaces"
 
 function createWindow(): void {
@@ -75,6 +75,7 @@ app.whenReady().then(() => {
     ipcMain.handle('openFolderInFileManager', async (_event: IpcMainInvokeEvent, folderPath: string): Promise<void> => await openFolderInFileManager(folderPath));
     ipcMain.handle('deleteMod', async (_event: IpcMainInvokeEvent, modPath: string): Promise<void> => await deleteMod(modPath));
     ipcMain.handle('importMod', async (_event: IpcMainInvokeEvent): Promise<void> => await importMod());
+    ipcMain.handle('updateEvery100ms', async (_event: IpcMainInvokeEvent): Promise<void> => await updateEvery100ms());
     
     app.on('activate', function () {
         // On macOS it"s common to re-create a window in the app when the

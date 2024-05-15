@@ -20,6 +20,7 @@ const api = {
     openFolderInFileManager: async(folderPath: string) : Promise<void> => await ipcRenderer.invoke("openFolderInFileManager", folderPath),
     deleteMod: async(modPath: string) : Promise<void> => await ipcRenderer.invoke("deleteMod", modPath),
     importMod: async() : Promise<void> => await ipcRenderer.invoke("importMod"),
+    updateEvery100ms: async() : Promise<void> => await ipcRenderer.invoke("updateEvery100ms")
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

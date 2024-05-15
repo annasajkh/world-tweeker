@@ -25,18 +25,20 @@ export default function MainArea(): JSX.Element {
         await window.api.importMod();
     }
 
-    async function constructListUI(): Promise<void> {
+    async function updateEvery100ms(): Promise<void> {
         if (await window.api.isSettingsFileExist()) {            
             await window.api.setupModConfigs();
             setModConfigs(await window.api.getModConfigs());
         }
+
+        window.api.updateEvery100ms();
     }
  
     useEffect(() => {
         const interval = setInterval(() => {
             setUpdateDelay(updateDelay + 1);
 
-            constructListUI();
+            updateEvery100ms();
         }, 100);
 
         return () => clearInterval(interval);
@@ -56,7 +58,6 @@ export default function MainArea(): JSX.Element {
 
                 if (isOneshotFolder) {
                     setOpenModal(false);
-                    await constructListUI();
                 } else {
                     setOpenModal(true);
                 }
@@ -100,7 +101,6 @@ export default function MainArea(): JSX.Element {
             }
 
             setOpenModal(false);
-            await constructListUI();
         }
     }
 

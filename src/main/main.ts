@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prettier/prettier */
 
-import { spawn } from 'child_process'
+import { ChildProcessWithoutNullStreams, spawn } from 'child_process'
 import os from 'os'
 import { OpenDialogReturnValue, app, dialog } from "electron"
 import fs from 'fs';
@@ -9,17 +9,49 @@ import path from "path";
 import { ModData, ModDataJSON, SettingsData } from "../renderer/src/utils/interfaces";
 import { shell } from 'electron';
 const extract = require('extract-zip');
+import regedit from 'regedit';
 
 let modConfigs: Map<string, ModData> = new Map<string, ModData>();
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+let steamAndOneshot: ChildProcessWithoutNullStreams | null = null
 
 export async function runOneshot(): Promise<void> {
     switch (os.platform()) {
         case 'win32': {
-            spawn('explorer', ['steam://rungameid/420530']);
+            steamAndOneshot = spawn('explorer', ['steam://rungameid/420530']);
+
             break;
         }
         case 'linux': {
-            spawn('xdg-open', ['steam://rungameid/420530'])
+            steamAndOneshot = spawn('xdg-open', ['steam://rungameid/420530'])
+            break;
+        }
+        default: {
+            throw new Error('Unsupported platform')
+        }
+    }
+
+}
+
+export async function updateEvery100ms(): Promise<void> {
+
+    switch (os.platform()) {
+        case 'win32': {
+            regedit.list(['HKCU\\SOFTWARE\\Valve\\Steam\\Apps\\420530'], (error, result) => {
+                console.log(result['HKCU\\SOFTWARE\\Valve\\Steam\\Apps\\420530'].values["Running"]);
+            });
+            break;
+        }
+        case 'linux': {
+            const filePath = path.join(process.env.HOME!, '.steam/steam/SteamApps/appmanifest_420530.acf');
+            fs.readFile(filePath, 'utf8', (error, data) => {
+                if (error) {
+                    console.error(error);
+                    return;
+                }
+                const isRunning = data.includes('"Running"		"1"');
+                console.log(isRunning);
+            });
             break;
         }
         default: {
