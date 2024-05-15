@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prettier/prettier */
 
-import { ChildProcessWithoutNullStreams, spawn } from 'child_process'
+import { ChildProcessWithoutNullStreams, exec, spawn } from 'child_process'
 import os from 'os'
 import { OpenDialogReturnValue, app, dialog } from "electron"
 import fs from 'fs';
@@ -43,14 +43,12 @@ export async function updateEvery100ms(): Promise<void> {
             break;
         }
         case 'linux': {
-            const filePath = path.join(process.env.HOME!, '.steam/steam/steamapps/appmanifest_420530.acf');
-            fs.readFile(filePath, 'utf8', (error, data) => {
+            exec('pgrep -f 420530', (error, stdout) => {
                 if (error) {
-                    console.error(error);
+                    console.error(`exec error: ${error}`);
                     return;
                 }
-                // const isRunning = data.includes('"Running"		"1"');
-                console.log(data);
+                console.log(`Is game running: ${stdout !== ''}`);
             });
             break;
         }
