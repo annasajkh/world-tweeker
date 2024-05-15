@@ -43,7 +43,7 @@ export async function updateEvery100ms(): Promise<void> {
             break;
         }
         case 'linux': {
-            const filePath = path.join(process.env.HOME!, '~/.steam/registry.vdf');
+            const filePath = path.join(process.env.HOME!, '.steam/registry.vdf');
             fs.readFile(filePath, 'utf8', (error, data) => {
                 if (error) {
                     console.error(error);
