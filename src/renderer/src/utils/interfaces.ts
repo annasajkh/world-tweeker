@@ -1,6 +1,13 @@
 /* eslint-disable prettier/prettier */
+
+export interface EnableData {
+    key: string;
+    enabled: boolean;
+}
+
 export interface SettingsData {
     oneshotPath: string;
+    modEnabledConfigs: EnableData[]
 }
 
 export interface ModData {

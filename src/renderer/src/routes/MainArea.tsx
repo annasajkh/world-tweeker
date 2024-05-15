@@ -26,8 +26,10 @@ export default function MainArea(): JSX.Element {
     }
 
     async function constructListUI(): Promise<void> {
-        await window.api.setupModConfigs();
-        setModConfigs(await window.api.getModConfigs());
+        if (await window.api.isSettingsFileExist()) {            
+            await window.api.setupModConfigs();
+            setModConfigs(await window.api.getModConfigs());
+        }
     }
  
     useEffect(() => {
@@ -79,11 +81,24 @@ export default function MainArea(): JSX.Element {
 
     async function oneshotFolderPathConfirmClicked(): Promise<void> {
         if (await window.api.isFolderOneshotDir(oneshotFolder)) {
-            const settingsJson: SettingsData = {
-                oneshotPath: oneshotFolder
+            if (await window.api.isSettingsFileExist()) {
+                const settings: SettingsData = JSON.parse(await window.api.readSettingsFile());
+
+                const settingsJson: SettingsData = {
+                    oneshotPath: oneshotFolder,
+                    modEnabledConfigs: settings.modEnabledConfigs
+                }
+    
+                await window.api.writeSettingsFile(JSON.stringify(settingsJson));
+            } else {
+                const settingsJson: SettingsData = {
+                    oneshotPath: oneshotFolder,
+                    modEnabledConfigs: []
+                }
+    
+                await window.api.writeSettingsFile(JSON.stringify(settingsJson));
             }
 
-            await window.api.writeSettingsFile(JSON.stringify(settingsJson));
             setOpenModal(false);
             await constructListUI();
         }

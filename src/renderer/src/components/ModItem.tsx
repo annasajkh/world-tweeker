@@ -1,9 +1,10 @@
 /* eslint-disable prettier/prettier */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import IconButton from "./IconButton";
 import MenuItem from "./MenuItem";
 import "./ModItem.css"
 import * as Popover from "@radix-ui/react-popover";
+import { EnableData, SettingsData } from "@renderer/utils/interfaces";
 
 interface Prop {
     name: string;
@@ -15,9 +16,58 @@ interface Prop {
 export default function ModItem({ name, modPath, iconBase64, author }: Prop): JSX.Element {
     const [enabled, setEnabled] = useState(true);
 
+
+    useEffect(() => {
+
+        async function loadModEnabledConfigs(): Promise<void> {
+            const settings: SettingsData = JSON.parse(await window.api.readSettingsFile());
+            const modEnabledConfigs: EnableData[] = settings.modEnabledConfigs;
+
+            console.log(settings)
+
+            const result = modEnabledConfigs.filter(modEnabledConfig => {
+                return modEnabledConfig.key === modPath
+            })
+
+            if (result.length != 0) {
+                setEnabled(result[0].enabled);
+            }
+        }
+
+        loadModEnabledConfigs();
+    }, [])
+
     async function enableMod(): Promise<void> {
         setEnabled(!enabled);
         await window.api.setModEnabled(modPath, !enabled);
+
+        const settings: SettingsData = JSON.parse(await window.api.readSettingsFile());
+
+        let modEnabledConfigs: EnableData[] = settings.modEnabledConfigs;
+
+        if (modEnabledConfigs == undefined || modEnabledConfigs == null) {
+            modEnabledConfigs = [];
+        } else {
+            const result = modEnabledConfigs.filter(modEnabledConfig => {
+                return modEnabledConfig.key === modPath
+            })
+
+            if (result.length == 0) {
+                modEnabledConfigs.push({
+                    key: modPath,
+                    enabled: !enabled
+                });
+            } else {
+                result[0].enabled = !enabled;
+            }
+        }
+
+        const settingsJson = {
+            oneshotPath: settings.oneshotPath,
+            modEnabledConfigs: modEnabledConfigs
+        }
+
+        await window.api.writeSettingsFile(JSON.stringify(settingsJson));
     }
 
     async function openModFolderInFileManager(): Promise<void> {
@@ -26,6 +76,21 @@ export default function ModItem({ name, modPath, iconBase64, author }: Prop): JS
 
     async function deleteMod(): Promise<void> {
         await window.api.deleteMod(modPath);
+
+        const settings: SettingsData = JSON.parse(await window.api.readSettingsFile());
+
+        let modEnabledConfigs: EnableData[] = settings.modEnabledConfigs;
+
+        modEnabledConfigs = modEnabledConfigs.filter((object) => {
+            return object.key !== modPath;
+        });
+
+        const settingsJson = {
+            oneshotPath: settings.oneshotPath,
+            modEnabledConfigs: modEnabledConfigs
+        }
+
+        await window.api.writeSettingsFile(JSON.stringify(settingsJson));
     }
 
     return (

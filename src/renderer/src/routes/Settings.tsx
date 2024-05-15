@@ -30,8 +30,11 @@ export default function Settings(): JSX.Element {
 
 
     async function oneshotFolderWriteSettingsFile(fileContent: string): Promise<void> {
+        const settings: SettingsData = JSON.parse(await window.api.readSettingsFile());
+
         const settingsJson: SettingsData = {
-            oneshotPath: fileContent
+            oneshotPath: fileContent,
+            modEnabledConfigs: settings.modEnabledConfigs
         }
 
         await window.api.writeSettingsFile(JSON.stringify(settingsJson));
