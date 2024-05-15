@@ -43,8 +43,16 @@ export async function updateEvery100ms(): Promise<void> {
             break;
         }
         case 'linux': {
-            const data = await fs.promises.readFile(path.join('~/', '.steam', 'registry.vdf'), 'utf8');
-            console.log(data);
+            const filePath = path.join(process.env.HOME!, '~/.steam/registry.vdf');
+            fs.readFile(filePath, 'utf8', (error, data) => {
+                if (error) {
+                    console.error(error);
+                    return;
+                }
+                console.log(data)
+                // const isRunning = data.includes('"Running"		"1"');
+                // console.log(isRunning);
+            });
             break;
         }
         default: {
