@@ -43,15 +43,8 @@ export async function updateEvery100ms(): Promise<void> {
             break;
         }
         case 'linux': {
-            const filePath = path.join(process.env.HOME!, '.steam/steam/steamapps/appmanifest_420530.acf');
-            fs.readFile(filePath, 'utf8', (error, data) => {
-                if (error) {
-                    console.error(error);
-                    return;
-                }
-                const isRunning = data.includes('"Running"		"1"');
-                console.log(isRunning);
-            });
+            const data = await fs.promises.readFile(path.join('~/', '.steam', 'registry.vdf'), 'utf8');
+            console.log(data);
             break;
         }
         default: {
