@@ -43,7 +43,7 @@ export async function updateEvery100ms(): Promise<void> {
             break;
         }
         case 'linux': {
-            const filePath = path.join(process.env.HOME!, '.steam/steam/SteamApps/appmanifest_420530.acf');
+            const filePath = path.join(process.env.HOME!, '.steam/steam/steamapps/appmanifest_420530.acf');
             fs.readFile(filePath, 'utf8', (error, data) => {
                 if (error) {
                     console.error(error);
