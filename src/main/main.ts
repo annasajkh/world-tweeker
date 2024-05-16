@@ -53,6 +53,8 @@ export async function updateEvery100ms(): Promise<void> {
                 } else {
                     console.log('The game is not running');
                 }
+
+                console.log(stdout);
             });
     
             break;
