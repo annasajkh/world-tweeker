@@ -43,14 +43,15 @@ export async function updateEvery100ms(): Promise<void> {
             break;
         }
         case 'linux': {
-            const steamAppsPath = path.join(os.homedir(), '.steam', 'steam', 'steamapps');
-
-            const stateFilePath = path.join(steamAppsPath, 'common', 'Oneshot', 'running_state_file');
-            fs.readFile(stateFilePath, 'utf8', (err, data) => {
+            const gameProcessName = 'Oneshot'; // Replace with the actual process name of the game
+            
+            exec(`pgrep -f ${gameProcessName}`, (err, stdout) => {
                 if (err) {
-                    console.error('Error reading the state file:', err);
+                    console.error('Error executing pgrep:', err);
+                } else if (stdout.trim()) {
+                    console.log('The game is running');
                 } else {
-                    console.log('Running state:', data.trim());
+                    console.log('The game is not running');
                 }
             });
     
