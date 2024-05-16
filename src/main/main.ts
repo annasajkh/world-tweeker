@@ -44,17 +44,16 @@ export async function updateEvery100ms(): Promise<void> {
         }
         case 'linux': {
             const gameProcessPath = './oneshot';
-
-            exec(`pgrep -f "${gameProcessPath}"`, (error, stdout) => {
-                if (error) {
-                    console.error('Error executing pgrep:', error);
+            
+            exec(`ps aux | grep -i ${gameProcessPath} | grep -v grep`, (err, stdout) => {
+                if (err) {
+                    console.error('Error executing ps command:', err);
                 } else if (stdout.trim()) {
                     console.log('The game is running');
+                    console.log('Process details:', stdout);
                 } else {
                     console.log('The game is not running');
                 }
-
-                console.log(stdout);
             });
     
             break;
