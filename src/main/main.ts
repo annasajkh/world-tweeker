@@ -43,15 +43,19 @@ export async function updateEvery100ms(): Promise<void> {
             break;
         }
         case 'linux': {
-            exec('pgrep -fl "oneshot"', (err, stdout) => {
-                if (err) {
-                    console.error('Error executing ps command:', err);
-                } else if (stdout.trim()) {
-                    console.log('The game is running');
-                    console.log('Process details:', stdout);
-                } else {
-                    console.log('The game is not running');
+            exec("pgrep -fl 'oneshot'", (error, stdout, stderr) => {
+                if (error) {
+                    console.log(stderr);
+                    console.error('Error executing ps command:', error);
                 }
+
+                console.log(stdout);
+
+                // if (stdout.trim()) {
+                //     console.log('The game is running');
+                // } else {
+                //     console.log('The game is not running');
+                // }
             });
     
             break;
