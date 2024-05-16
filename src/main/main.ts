@@ -45,7 +45,6 @@ export async function updateEvery100ms(): Promise<void> {
         case 'linux': {
             const steamAppsPath = path.join(os.homedir(), '.steam', 'steam', 'steamapps');
 
-            // Option 1: Check if a specific file exists and indicates the running state
             const stateFilePath = path.join(steamAppsPath, 'common', 'Oneshot', 'running_state_file');
             fs.readFile(stateFilePath, 'utf8', (err, data) => {
                 if (err) {
