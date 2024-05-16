@@ -43,7 +43,7 @@ export async function updateEvery100ms(): Promise<void> {
             break;
         }
         case 'linux': {
-            const gameProcessName = 'Oneshot'; // Replace with the actual process name of the game
+            const gameProcessName = 'Oneshot';
             
             exec(`pgrep -f ${gameProcessName}`, (err, stdout) => {
                 if (err) {
