@@ -43,9 +43,7 @@ export async function updateEvery100ms(): Promise<void> {
             break;
         }
         case 'linux': {
-            const gameProcessPath = './oneshot';
-            
-            exec(`ps aux | grep -i ${gameProcessPath} | grep -v grep`, (err, stdout) => {
+            exec('pgrep -fl "oneshot"', (err, stdout) => {
                 if (err) {
                     console.error('Error executing ps command:', err);
                 } else if (stdout.trim()) {
