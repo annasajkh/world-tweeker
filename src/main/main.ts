@@ -44,10 +44,10 @@ export async function updateEvery100ms(): Promise<void> {
         }
         case 'linux': {
             const gameProcessName = 'oneshot';
-            
-            exec(`pgrep -f ${gameProcessName}`, (err, stdout) => {
-                if (err) {
-                    console.error('Error executing pgrep:', err);
+
+            exec(`pgrep -x ${gameProcessName}`, (error, stdout) => {
+                if (error) {
+                    console.error('Error executing pgrep:', error);
                 } else if (stdout.trim()) {
                     console.log('The game is running');
                 } else {
