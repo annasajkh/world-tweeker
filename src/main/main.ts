@@ -14,6 +14,7 @@ import regedit from 'regedit';
 let modConfigs: Map<string, ModData> = new Map<string, ModData>();
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let steamAndOneshot: ChildProcessWithoutNullStreams | null = null
+let oneshotIsRunning: boolean = false;
 
 export async function runOneshot(): Promise<void> {
     switch (os.platform()) {
@@ -34,11 +35,14 @@ export async function runOneshot(): Promise<void> {
 }
 
 export async function updateEvery100ms(): Promise<void> {
-
     switch (os.platform()) {
         case 'win32': {
             regedit.list(['HKCU\\SOFTWARE\\Valve\\Steam\\Apps\\420530'], (error, result) => {
-                console.log(result['HKCU\\SOFTWARE\\Valve\\Steam\\Apps\\420530'].values["Running"].value);
+                if (error) {
+                    console.error(error);
+                }
+
+                oneshotIsRunning = result['HKCU\\SOFTWARE\\Valve\\Steam\\Apps\\420530'].values["Running"].value ? true : false;
             });
             break;
         }
@@ -49,13 +53,7 @@ export async function updateEvery100ms(): Promise<void> {
                     console.error('Error executing ps command:', error);
                 }
 
-                console.log(stdout);
-
-                // if (stdout.trim()) {
-                //     console.log('The game is running');
-                // } else {
-                //     console.log('The game is not running');
-                // }
+                oneshotIsRunning = stdout.includes("oneshot");
             });
     
             break;
@@ -64,6 +62,8 @@ export async function updateEvery100ms(): Promise<void> {
             throw new Error('Unsupported platform')
         }
     }
+
+    console.log(`is oneshot running: ${oneshotIsRunning}`);
 }
 
 export async function importMod(): Promise<void> {
