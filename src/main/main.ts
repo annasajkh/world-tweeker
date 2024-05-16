@@ -38,18 +38,23 @@ export async function updateEvery100ms(): Promise<void> {
     switch (os.platform()) {
         case 'win32': {
             regedit.list(['HKCU\\SOFTWARE\\Valve\\Steam\\Apps\\420530'], (error, result) => {
-                console.log(result['HKCU\\SOFTWARE\\Valve\\Steam\\Apps\\420530'].values["Running"]);
+                console.log(result['HKCU\\SOFTWARE\\Valve\\Steam\\Apps\\420530'].values["Running"].value);
             });
             break;
         }
         case 'linux': {
-            exec('pgrep -f 420530', (error, stdout) => {
-                if (error) {
-                    console.error(`exec error: ${error}`);
-                    return;
+            const steamAppsPath = path.join(os.homedir(), '.steam', 'steam', 'steamapps');
+
+            // Option 1: Check if a specific file exists and indicates the running state
+            const stateFilePath = path.join(steamAppsPath, 'common', 'Oneshot', 'running_state_file');
+            fs.readFile(stateFilePath, 'utf8', (err, data) => {
+                if (err) {
+                    console.error('Error reading the state file:', err);
+                } else {
+                    console.log('Running state:', data.trim());
                 }
-                console.log(`Is game running: ${stdout !== ''}`);
             });
+    
             break;
         }
         default: {
