@@ -9,18 +9,24 @@ import path from "path";
 import { ModData, ModDataJSON, SettingsData } from "../renderer/src/utils/interfaces";
 import { shell } from 'electron';
 const extract = require('extract-zip');
-import regedit from 'regedit';
 
 let modConfigs: Map<string, ModData> = new Map<string, ModData>();
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let steamAndOneshot: ChildProcessWithoutNullStreams | null = null
 let oneshotIsRunning: boolean = false;
+let oneshotFilesPaths: string[] = [];
+
 
 export async function runOneshot(): Promise<void> {
+    console.log(oneshotFilesPaths);
+
+    for(const modConfig of modConfigs) {
+        console.log(getAllFiles(modConfig[1].modPath));
+    }
+
     switch (os.platform()) {
         case 'win32': {
             steamAndOneshot = spawn('explorer', ['steam://rungameid/420530']);
-
             break;
         }
         case 'linux': {
@@ -31,18 +37,40 @@ export async function runOneshot(): Promise<void> {
             throw new Error('Unsupported platform')
         }
     }
+}
 
+export async function isOneshotFilesPathsEmpty(): Promise<boolean> {
+    return oneshotFilesPaths.length == 0;
+}
+
+export async function setupOneshotFilesPaths(): Promise<void> {
+    oneshotFilesPaths = getAllFiles(await getOneshotFolder());
+}
+
+export function getAllFiles(pathDir: string): string[] {
+    const result: string[] = [];
+
+    for (const folder of fs.readdirSync(pathDir)) {
+        if (fs.lstatSync(path.join(pathDir, folder)).isDirectory() ) {
+            result.push(...getAllFiles(path.join(pathDir, folder)));
+        } else {
+            result.push(path.join(pathDir, folder));
+        }
+    }
+    
+    return result;
 }
 
 export async function updateEvery100ms(): Promise<void> {
     switch (os.platform()) {
         case 'win32': {
-            regedit.list(['HKCU\\SOFTWARE\\Valve\\Steam\\Apps\\420530'], (error, result) => {
+            exec("tasklist | findstr oneshot", (error, stdout) => {
                 if (error) {
-                    console.error(error);
+                    oneshotIsRunning = false;
+                    return;
                 }
 
-                oneshotIsRunning = result['HKCU\\SOFTWARE\\Valve\\Steam\\Apps\\420530'].values["Running"].value ? true : false;
+                oneshotIsRunning = stdout.includes("oneshot");
             });
             break;
         }
@@ -55,7 +83,6 @@ export async function updateEvery100ms(): Promise<void> {
 
                 oneshotIsRunning = stdout.includes("oneshot");
             });
-    
             break;
         }
         default: {
@@ -168,6 +195,32 @@ export async function isFolderOneshotDir(dirPath: string): Promise<boolean> {
     }
 
     return checkCount == foldersAndFiles.length;
+}
+
+export async function isFolderOneshotMod(dirPath: string): Promise<boolean> {
+    const foldersAndFiles: string[] = ["Audio", "Data", "Fonts", "Graphics", "Languages", "Wallpaper", "oneshot"];
+    const foldersAndFilesInDirPath: string[] = [];
+
+    let checkCount: number = 0;
+
+    if (dirPath.trim() == "") {
+        return false;
+    }
+
+    fs.readdirSync(dirPath).forEach(file => {
+        foldersAndFilesInDirPath.push(file);
+    });
+
+    for (const folderOrFileName of foldersAndFiles) {
+        for (const folderOrFileNameInDirPath of foldersAndFilesInDirPath) {
+            if (folderOrFileNameInDirPath.includes(folderOrFileName)) {
+                checkCount++;
+                break;
+            }
+        }
+    }
+
+    return checkCount != 0;
 }
 
 export async function openFolderInFileManager(folderPath: string): Promise<void> {

@@ -20,7 +20,10 @@ const api = {
     openFolderInFileManager: async(folderPath: string) : Promise<void> => await ipcRenderer.invoke("openFolderInFileManager", folderPath),
     deleteMod: async(modPath: string) : Promise<void> => await ipcRenderer.invoke("deleteMod", modPath),
     importMod: async() : Promise<void> => await ipcRenderer.invoke("importMod"),
-    updateEvery100ms: async() : Promise<void> => await ipcRenderer.invoke("updateEvery100ms")
+    updateEvery100ms: async() : Promise<void> => await ipcRenderer.invoke("updateEvery100ms"),
+    setupOneshotFilesPaths: async() : Promise<void> => await ipcRenderer.invoke("setupOneshotFilesPaths"),
+    isOneshotFilesPathsEmpty: async() : Promise<boolean> => await ipcRenderer.invoke("isOneshotFilesPathsEmpty"),
+    isFolderOneshotMod: async(dirPath: string) : Promise<boolean> => await ipcRenderer.invoke("isFolderOneshotMod", dirPath)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

@@ -67,7 +67,14 @@ export default function MainArea(): JSX.Element {
             }
         }
 
+        async function main(): Promise<void> {
+            if (window.api.isOneshotFilesPathsEmpty()) {
+                window.api.setupOneshotFilesPaths();   
+            }
+        }
+
         isSettingsFileExist();
+        main();
     }, [])
 
     async function oneshotFolderPathSelector(): Promise<void> {

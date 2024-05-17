@@ -12,6 +12,17 @@
     user-select: none;
 }
 
+.mod-item-invalid {
+    padding-top: 0px;
+    padding-bottom: 16px;
+    border: 1px solid red;
+}
+
+.mod-item-invalid-text {
+    color: red;
+    font-size: 12px;
+}
+
 .mod-item-image {
     width: 192px;
     height: 192px;

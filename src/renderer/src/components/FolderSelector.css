@@ -8,7 +8,7 @@
     align-items: center;
 }
 
-.folder-selector-not-valid-warning {
+.folder-selector-invalid {
     color: red;
     font-size: 12px;
 }
@@ -27,7 +27,7 @@
 }
 
 
-.folder-selector-input-not-valid-warning {
+.folder-selector-input-invalid {
     border: 2px solid red;
 }
 
