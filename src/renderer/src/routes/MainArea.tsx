@@ -118,7 +118,7 @@ export default function MainArea(): JSX.Element {
             <div className="mod-list-container">
                 <div className="mod-list">
                     {Array.from(modConfigs.values()).map((modConfig: ModData) => (
-                        <ModItem key={modConfig.modPath} modPath={modConfig.modPath} iconBase64={modConfig.iconBase64 != null ? modConfig.iconBase64 : null} name={modConfig.name} author={modConfig.author != null ? modConfig.author : null} />
+                        <ModItem key={modConfig.modPath} modPath={modConfig.modPath} isModHaveConflict={modConfig.isModHaveConflict} isOneshotMod={modConfig.isOneshotMod} iconBase64={modConfig.iconBase64 != null ? modConfig.iconBase64 : null} name={modConfig.name} author={modConfig.author != null ? modConfig.author : null} />
                     ))}
                 </div>
             </div>

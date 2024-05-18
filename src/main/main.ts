@@ -1,36 +1,29 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prettier/prettier */
 
-import { ChildProcessWithoutNullStreams, exec, spawn } from 'child_process'
+import { exec, spawn } from 'child_process'
 import os from 'os'
 import { OpenDialogReturnValue, app, dialog } from "electron"
 import fs from 'fs';
 import path from "path";
 import { ModData, ModDataJSON, SettingsData } from "../renderer/src/utils/interfaces";
 import { shell } from 'electron';
+import { getAllFiles, getPathSeparator } from "./utils";
 const extract = require('extract-zip');
 
-let modConfigs: Map<string, ModData> = new Map<string, ModData>();
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-let steamAndOneshot: ChildProcessWithoutNullStreams | null = null
+const modConfigs: Map<string, ModData> = new Map<string, ModData>();
 let oneshotIsRunning: boolean = false;
-let oneshotFilesPaths: string[] = [];
-
+let oneshotFilePaths: string[] = [];
 
 export async function runOneshot(): Promise<void> {
-    console.log(oneshotFilesPaths);
-
-    for(const modConfig of modConfigs) {
-        console.log(getAllFiles(modConfig[1].modPath));
-    }
-
+    
     switch (os.platform()) {
         case 'win32': {
-            steamAndOneshot = spawn('explorer', ['steam://rungameid/420530']);
+            spawn('explorer', ['steam://rungameid/420530']);
             break;
         }
         case 'linux': {
-            steamAndOneshot = spawn('xdg-open', ['steam://rungameid/420530'])
+            spawn('xdg-open', ['steam://rungameid/420530'])
             break;
         }
         default: {
@@ -39,29 +32,48 @@ export async function runOneshot(): Promise<void> {
     }
 }
 
+function isModHaveConflict(modPath: string): boolean {
+    const modRelativeFilePaths = getAllFiles(modPath);
+
+    for (let i = 0; i < modRelativeFilePaths.length; i++) {
+        modRelativeFilePaths[i] = modRelativeFilePaths[i].split(modPath)[1].replace(getPathSeparator(), "").trim();
+    }
+
+    for (const otherModConfig of modConfigs) {
+        if (otherModConfig[0] !== modPath && otherModConfig[1].enabled && modConfigs.get(modPath)?.enabled) {
+
+            console.log(otherModConfig[1].enabled)
+
+            const otherModFileRelativePaths = getAllFiles(otherModConfig[1].modPath);
+
+            for (let i = 0; i < otherModFileRelativePaths.length; i++) {
+                otherModFileRelativePaths[i] = otherModFileRelativePaths[i].split(otherModConfig[0])[1].replace(getPathSeparator(), "").trim();
+
+                if (modRelativeFilePaths.indexOf(otherModFileRelativePaths[i]) > -1) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
 export async function isOneshotFilesPathsEmpty(): Promise<boolean> {
-    return oneshotFilesPaths.length == 0;
+    return oneshotFilePaths.length == 0;
 }
 
 export async function setupOneshotFilesPaths(): Promise<void> {
-    oneshotFilesPaths = getAllFiles(await getOneshotFolder());
-}
-
-export function getAllFiles(pathDir: string): string[] {
-    const result: string[] = [];
-
-    for (const folder of fs.readdirSync(pathDir)) {
-        if (fs.lstatSync(path.join(pathDir, folder)).isDirectory() ) {
-            result.push(...getAllFiles(path.join(pathDir, folder)));
-        } else {
-            result.push(path.join(pathDir, folder));
-        }
-    }
-    
-    return result;
+    oneshotFilePaths = getAllFiles(await getOneshotFolder());
 }
 
 export async function updateEvery100ms(): Promise<void> {
+    for (const modConfig of modConfigs) {
+        const modConfigUpdated = modConfig;
+        modConfigUpdated[1].isModHaveConflict = isModHaveConflict(modConfig[0]);
+        modConfigs.set(modConfig[0], modConfigUpdated[1])
+    }
+
     switch (os.platform()) {
         case 'win32': {
             exec("tasklist | findstr oneshot", (error, stdout) => {
@@ -89,8 +101,6 @@ export async function updateEvery100ms(): Promise<void> {
             throw new Error('Unsupported platform')
         }
     }
-
-    console.log(`is oneshot running: ${oneshotIsRunning}`);
 }
 
 export async function importMod(): Promise<void> {
@@ -105,23 +115,7 @@ export async function importMod(): Promise<void> {
         return;
     }
 
-    let separator: string = "";
-
-    switch (os.platform()) {
-        case 'win32': {
-            separator = path.win32.sep;
-            break;
-        }
-        case 'linux': {
-            separator = path.posix.sep;
-            break;
-        }
-        default: {
-            throw new Error('Unsupported platform')
-        }
-    }
-
-    extract(modFile.filePaths[0], { dir: path.join(`${await getOneshotFolder()}`, "Mods", modFile.filePaths[0].split(separator).at(-1)!.split(".")[0]) }, (error): void => {
+    extract(modFile.filePaths[0], { dir: path.join(`${await getOneshotFolder()}`, "Mods", modFile.filePaths[0].split(getPathSeparator()).at(-1)!.split(".")[0]) }, (error): void => {
         console.error(error);
     });
 }
@@ -197,7 +191,7 @@ export async function isFolderOneshotDir(dirPath: string): Promise<boolean> {
     return checkCount == foldersAndFiles.length;
 }
 
-export async function isFolderOneshotMod(dirPath: string): Promise<boolean> {
+function isFolderOneshotMod(dirPath: string): boolean {
     const foldersAndFiles: string[] = ["Audio", "Data", "Fonts", "Graphics", "Languages", "Wallpaper", "oneshot"];
     const foldersAndFilesInDirPath: string[] = [];
 
@@ -232,8 +226,14 @@ export async function getModConfigs(): Promise<Map<string, ModData>> {
 }
 
 export async function setModEnabled(key: string, enabled: boolean): Promise<void> {
-    const modConfig: ModData = modConfigs.get(key)!;
-    modConfig.enabled = enabled;
+    const modConfig: ModData | undefined = modConfigs.get(key);
+
+    if (modConfig) {
+        modConfig.enabled = enabled;
+        modConfigs.set(key, modConfig);
+    } else {
+        console.error(`Mod config with key "${key}" not found.`);
+    }
 }
 
 export async function getModConfig(key: string): Promise<ModData> {
@@ -246,11 +246,10 @@ export async function setModConfig(key: string, config: ModData): Promise<void> 
 
 export async function deleteMod(modPath: string): Promise<void> {
     fs.rmSync(modPath, { recursive: true, force: true });
+    modConfigs.delete(modPath);
 }
 
 export async function setupModConfigs(): Promise<void> {
-    modConfigs = new Map();
-
     const modDirectory: string = path.join(`${await getOneshotFolder()}`, "Mods");
 
     if (!fs.existsSync(modDirectory)) {
@@ -279,10 +278,13 @@ export async function setupModConfigs(): Promise<void> {
 
                 modConfigs.set(individualModPath, {
                     modPath: individualModPath,
-                    enabled: true,
+                    isModHaveConflict: isModHaveConflict(individualModPath),
+                    dirName: modFolder,
+                    enabled: false,
                     name: modConfigJSON.name,
                     iconBase64: `data:image/jpeg;base64,${modIcon.toString('base64')}`,
                     author: modConfigJSON.author,
+                    isOneshotMod: isFolderOneshotMod(individualModPath)
                 })
 
                 isModConfigExist = true;
@@ -292,10 +294,13 @@ export async function setupModConfigs(): Promise<void> {
         if (!isModConfigExist) {
             modConfigs.set(individualModPath, {
                 modPath: individualModPath,
-                enabled: true,
+                isModHaveConflict: isModHaveConflict(individualModPath),
+                dirName: modFolder,
+                enabled: false,
                 name: modFolder,
                 iconBase64: null,
                 author: null,
+                isOneshotMod: isFolderOneshotMod(individualModPath)
             })
         }
     });

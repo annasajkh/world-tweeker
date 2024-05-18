@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prettier/prettier */
 // Modal as a separate component
 
@@ -17,8 +16,7 @@ interface Props {
 }
 
 export default function Modal({ haveCloseButton, canClose, className, openModal, closeModal, children }: Props): JSX.Element {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ref = useRef<any>();
+    const ref = useRef<HTMLDialogElement>(null);
     const allowDialogDismiss: boolean = false;
     
     useEffect(() => {
@@ -29,7 +27,7 @@ export default function Modal({ haveCloseButton, canClose, className, openModal,
         }
     }, [openModal]);
 
-    const handleKeyDown = (event): any => {
+    const handleKeyDown = (event: KeyboardEvent): void => {
         if (event.key !== 'Escape') {
             return;
         }

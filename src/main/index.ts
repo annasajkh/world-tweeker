@@ -5,7 +5,7 @@
 import { app, shell, BrowserWindow, ipcMain, IpcMainInvokeEvent, OpenDialogReturnValue } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { deleteMod, getModConfig, getModConfigs, getOneshotFolder, importMod, isFolderOneshotDir, isFolderOneshotMod, isOneshotFilesPathsEmpty, isSettingsFileExist, openFolderInFileManager, openOneshotFolderSelector, readSettingsFile, runOneshot, setModConfig, setModEnabled, setupModConfigs, setupOneshotFilesPaths, updateEvery100ms, writeSettingsFile } from "./main"
+import { deleteMod, getModConfig, getModConfigs, getOneshotFolder, importMod, isFolderOneshotDir, isOneshotFilesPathsEmpty, isSettingsFileExist, openFolderInFileManager, openOneshotFolderSelector, readSettingsFile, runOneshot, setModConfig, setModEnabled, setupModConfigs, setupOneshotFilesPaths, updateEvery100ms, writeSettingsFile } from "./main"
 import { ModData } from "../renderer/src/utils/interfaces"
 
 function createWindow(): void {
@@ -78,7 +78,6 @@ app.whenReady().then(() => {
     ipcMain.handle('updateEvery100ms', async (_event: IpcMainInvokeEvent): Promise<void> => await updateEvery100ms());
     ipcMain.handle('setupOneshotFilesPaths', async (_event: IpcMainInvokeEvent): Promise<void> => setupOneshotFilesPaths());
     ipcMain.handle("isOneshotFilesPathsEmpty", async (_event: IpcMainInvokeEvent): Promise<boolean> => isOneshotFilesPathsEmpty());
-    ipcMain.handle("isFolderOneshotMod", async (_event: IpcMainInvokeEvent, dirPath: string): Promise<boolean> => isFolderOneshotMod(dirPath));
     
     app.on('activate', function () {
         // On macOS it"s common to re-create a window in the app when the
