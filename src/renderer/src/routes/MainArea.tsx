@@ -13,7 +13,7 @@ import ModItem from "@renderer/components/ModItem";
 export default function MainArea(): JSX.Element {
     const [openOneShotFolderInvalidModal, setOpenOneShotFolderInvalidModal] = useState(false);
     const [isFolderOneshotDir, setIsFolderOneshotDir] = useState(false);
-    
+
     const [oneshotFolder, setOneshotFolder] = useState('')
     const [modConfigs, setModConfigs] = useState<Map<string, ModData>>(new Map());
     const [updateDelay, setUpdateDelay] = useState(0);
@@ -23,7 +23,13 @@ export default function MainArea(): JSX.Element {
     }
 
     async function importModClicked(): Promise<void> {
-        await window.api.importMod();
+        const modFilePath: string | null =  await window.api.importMod();
+
+        if (modFilePath == null) {
+            return;
+        }
+
+        await window.api.extractMod(modFilePath);
     }
 
     async function updateEvery100ms(): Promise<void> {

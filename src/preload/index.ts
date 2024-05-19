@@ -19,10 +19,11 @@ const api = {
     setModEnabled: async(key: string, enabled: boolean): Promise<void> => await ipcRenderer.invoke("setModEnabled", key, enabled),
     openFolderInFileManager: async(folderPath: string) : Promise<void> => await ipcRenderer.invoke("openFolderInFileManager", folderPath),
     deleteMod: async(modPath: string) : Promise<void> => await ipcRenderer.invoke("deleteMod", modPath),
-    importMod: async() : Promise<void> => await ipcRenderer.invoke("importMod"),
     updateEvery100ms: async() : Promise<void> => await ipcRenderer.invoke("updateEvery100ms"),
     setupOneshotFilesPaths: async() : Promise<void> => await ipcRenderer.invoke("setupOneshotFilesPaths"),
     isOneshotFilesPathsEmpty: async() : Promise<boolean> => await ipcRenderer.invoke("isOneshotFilesPathsEmpty"),
+    importMod: async() : Promise<string | null> => await ipcRenderer.invoke("importMod"),
+    extractMod: async(modFilePath: string) : Promise<void> => await ipcRenderer.invoke("extractMod", modFilePath)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

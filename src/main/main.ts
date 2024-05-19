@@ -6,7 +6,7 @@ import os from 'os'
 import { OpenDialogReturnValue, app, dialog } from "electron"
 import fs from 'fs';
 import path from "path";
-import { ModData, ModDataJSON, SettingsData } from "../renderer/src/utils/interfaces";
+import { EnableData, ModData, ModDataJSON, SettingsData } from "../renderer/src/utils/interfaces";
 import { shell } from 'electron';
 import { getAllFiles, getPathSeparator } from "./utils";
 const extract = require('extract-zip');
@@ -32,7 +32,7 @@ export async function runOneshot(): Promise<void> {
     }
 }
 
-function isModHaveConflict(modPath: string): boolean {
+function isModHaveConflict(modPath: string, enable: boolean): boolean {
     const modRelativeFilePaths = getAllFiles(modPath);
 
     for (let i = 0; i < modRelativeFilePaths.length; i++) {
@@ -40,7 +40,7 @@ function isModHaveConflict(modPath: string): boolean {
     }
 
     for (const otherModConfig of modConfigs) {
-        if (otherModConfig[0] !== modPath && otherModConfig[1].enabled && modConfigs.get(modPath)?.enabled) {
+        if (otherModConfig[0] !== modPath && otherModConfig[1].enabled && enable) {
             const otherModFileRelativePaths = getAllFiles(otherModConfig[1].modPath);
 
             for (let i = 0; i < otherModFileRelativePaths.length; i++) {
@@ -103,7 +103,7 @@ export async function updateEvery100ms(): Promise<void> {
     }
 }
 
-export async function importMod(): Promise<void> {
+export async function importMod(): Promise<string | null> {
     const modFile = await dialog.showOpenDialog({
         filters: [
             { name: "Zip", extensions: ["zip"] }
@@ -112,13 +112,18 @@ export async function importMod(): Promise<void> {
     });
 
     if (modFile.canceled) {
-        return;
+        return null;
     }
 
-    extract(modFile.filePaths[0], { dir: path.join(`${await getOneshotFolder()}`, "Mods", modFile.filePaths[0].split(getPathSeparator()).at(-1)!.split(".")[0]) }, (error): void => {
+    return modFile.filePaths[0];
+}
+
+export async function extractMod(modFilePath: string): Promise<void> {
+    extract(modFilePath, { dir: path.join(`${await getOneshotFolder()}`, "Mods",  modFilePath.split(getPathSeparator()).at(-1)!.split(".")[0]) }, (error): void => {
         console.error(error);
     });
 }
+
 
 export async function isSettingsFileExist(): Promise<boolean> {
     return fs.existsSync(path.join(app.getPath('userData'), 'settings.json'));
@@ -250,6 +255,7 @@ export async function deleteMod(modPath: string): Promise<void> {
     if (modPath.trim() === "") {
         return;
     }
+    
     fs.rmSync(modPath, { recursive: true, force: true });
     modConfigs.delete(modPath);
 }
@@ -266,6 +272,10 @@ export async function setupModConfigs(): Promise<void> {
         fs.mkdirSync(modDirectory);
     }
 
+    const settings: SettingsData = JSON.parse(await readSettingsFile());
+
+    const modEnabledConfigs: EnableData[] = settings.modEnabledConfigs;
+
     fs.readdirSync(modDirectory).forEach(modFolder => {
         const individualModPath: string = path.join(`${modDirectory}`, `${modFolder}`);
 
@@ -275,16 +285,20 @@ export async function setupModConfigs(): Promise<void> {
 
         let isModConfigExist: boolean = false;
 
+        const enableData = modEnabledConfigs.filter(modEnabledConfig => {
+            return modEnabledConfig.key === individualModPath
+        })
+
         fs.readdirSync(individualModPath).forEach(modContentName => {
             if (modContentName == 'mod_config.json') {
                 const modConfigJSON: ModDataJSON = JSON.parse(fs.readFileSync(path.join(`${individualModPath}`, "mod_config.json"), 'utf8'));
                 const modIcon = fs.readFileSync(path.join(`${individualModPath}`, `${modConfigJSON.iconPath}`));
-
+                
                 modConfigs.set(individualModPath, {
                     modPath: individualModPath,
-                    isModHaveConflict: isModHaveConflict(individualModPath),
+                    isModHaveConflict: isModHaveConflict(individualModPath, enableData.length !== 0 ? enableData[0].enabled : true),
                     dirName: modFolder,
-                    enabled: true,
+                    enabled: enableData.length !== 0 ? enableData[0].enabled : true,
                     name: modConfigJSON.name,
                     iconBase64: `data:image/jpeg;base64,${modIcon.toString('base64')}`,
                     author: modConfigJSON.author,
@@ -298,9 +312,9 @@ export async function setupModConfigs(): Promise<void> {
         if (!isModConfigExist) {
             modConfigs.set(individualModPath, {
                 modPath: individualModPath,
-                isModHaveConflict: isModHaveConflict(individualModPath),
+                isModHaveConflict: isModHaveConflict(individualModPath, enableData.length !== 0 ? enableData[0].enabled : true),
                 dirName: modFolder,
-                enabled: true,
+                enabled: enableData.length !== 0 ? enableData[0].enabled : true,
                 name: modFolder,
                 iconBase64: null,
                 author: null,
