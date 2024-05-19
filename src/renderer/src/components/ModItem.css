@@ -71,6 +71,29 @@
     outline: none;
 }
 
+.mod-item-delete-warning {
+    max-width: 540px;
+    overflow-wrap: break-word;
+}
+
+.mod-item-delete-warning-text {
+    margin-bottom: 16px;
+    user-select: none;
+}
+
+.mod-item-delete-confirm-button-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    margin-top: 16px;
+}
+
+.mod-item-delete-confirm-button {
+    width: 64px;
+    height: 32px;
+}
+
 .mod-item-menu-popup-items {
 
 }

@@ -5,6 +5,8 @@ import MenuItem from "./MenuItem";
 import "./ModItem.css"
 import * as Popover from "@radix-ui/react-popover";
 import { EnableData, SettingsData } from "@renderer/utils/interfaces";
+import Modal from "./Modal";
+import TextButton from "./TextButton";
 
 interface Prop {
     name: string;
@@ -17,6 +19,7 @@ interface Prop {
 
 export default function ModItem({ name, isModHaveConflict, isOneshotMod, modPath, iconBase64, author }: Prop): JSX.Element {
     const [enabled, setEnabled] = useState(true);
+    const [openDeleteModConfirm, setOpenDeleteModConfirm] = useState(false);
 
     useEffect(() => {
         async function setup(): Promise<void> {
@@ -73,6 +76,10 @@ export default function ModItem({ name, isModHaveConflict, isOneshotMod, modPath
         await window.api.openFolderInFileManager(modPath);
     }
 
+    function deleteModConfirmation(): void {
+        setOpenDeleteModConfirm(true);
+    }
+    
     async function deleteMod(): Promise<void> {
         await window.api.deleteMod(modPath);
 
@@ -108,11 +115,20 @@ export default function ModItem({ name, isModHaveConflict, isOneshotMod, modPath
                         <div className="mod-item-menu-popup-items">
                             <MenuItem text={enabled ? "Disable" : "Enable"} onClick={enableMod} />
                             <MenuItem text="Open Mod Folder" onClick={openModFolderInFileManager} />
-                            <MenuItem text="Delete" onClick={deleteMod} />
+                            <MenuItem text="Delete" onClick={deleteModConfirmation} />
                         </div>
                     </Popover.Content>
                 </Popover.Portal>
             </Popover.Root>
+
+            <Modal haveCloseButton={false} canClose={false} className="mod-item-delete-warning" openModal={openDeleteModConfirm} closeModal={() => setOpenDeleteModConfirm(false)}>
+                <p className="mod-item-delete-warning-text">Do you want to delete {modPath}?</p>
+                <div className="mod-item-delete-confirm-button-container">
+                    <TextButton text="Yes" className="mod-item-delete-confirm-button" onClick={deleteMod} />
+                    <TextButton text="No" className="mod-item-delete-confirm-button" onClick={() => setOpenDeleteModConfirm(false)} />
+                </div>
+                
+            </Modal>
         </div>
     )
 }

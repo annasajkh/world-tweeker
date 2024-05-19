@@ -12,8 +12,8 @@ function createWindow(): void {
     // Create the browser window.
     const mainWindow = new BrowserWindow({
         icon:  join(__dirname, '../../resources/icon.ico'),
-        minWidth: 16 * 24,
-        minHeight: 9 * 24,
+        minWidth: 960,
+        minHeight: 540,
         width: 960,
         height: 540,
         show: false,

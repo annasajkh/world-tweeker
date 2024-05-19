@@ -11,9 +11,10 @@ import TextButton from "@renderer/components/TextButton";
 import ModItem from "@renderer/components/ModItem";
 
 export default function MainArea(): JSX.Element {
-    const [openModal, setOpenModal] = useState(false);
-    const [oneshotFolder, setOneshotFolder] = useState('')
+    const [openOneShotFolderInvalidModal, setOpenOneShotFolderInvalidModal] = useState(false);
     const [isFolderOneshotDir, setIsFolderOneshotDir] = useState(false);
+    
+    const [oneshotFolder, setOneshotFolder] = useState('')
     const [modConfigs, setModConfigs] = useState<Map<string, ModData>>(new Map());
     const [updateDelay, setUpdateDelay] = useState(0);
 
@@ -26,12 +27,8 @@ export default function MainArea(): JSX.Element {
     }
 
     async function updateEvery100ms(): Promise<void> {
-        if (await window.api.isSettingsFileExist()) {            
-            await window.api.setupModConfigs();
-            setModConfigs(await window.api.getModConfigs());
-        }
-
         window.api.updateEvery100ms();
+        setModConfigs(await window.api.getModConfigs());
     }
  
     useEffect(() => {
@@ -57,13 +54,13 @@ export default function MainArea(): JSX.Element {
                 const isOneshotFolder: boolean = await window.api.isFolderOneshotDir(settingsJson["oneshotPath"]);
 
                 if (isOneshotFolder) {
-                    setOpenModal(false);
+                    setOpenOneShotFolderInvalidModal(false);
                 } else {
-                    setOpenModal(true);
+                    setOpenOneShotFolderInvalidModal(true);
                 }
 
             } else {
-                setOpenModal(true);
+                setOpenOneShotFolderInvalidModal(true);
             }
         }
 
@@ -107,7 +104,7 @@ export default function MainArea(): JSX.Element {
                 await window.api.writeSettingsFile(JSON.stringify(settingsJson));
             }
 
-            setOpenModal(false);
+            setOpenOneShotFolderInvalidModal(false);
         }
     }
 
@@ -123,7 +120,7 @@ export default function MainArea(): JSX.Element {
                 </div>
             </div>
 
-            <Modal haveCloseButton={false} canClose={isFolderOneshotDir} className="" openModal={openModal} closeModal={() => setOpenModal(false)}>
+            <Modal haveCloseButton={false} canClose={isFolderOneshotDir} className="" openModal={openOneShotFolderInvalidModal} closeModal={() => setOpenOneShotFolderInvalidModal(false)}>
                 <p className="oneshot-folder-not-selected-warning">Please select Oneshot folder located in steamapps/common</p>
                 <FolderSelector folderNotValidWarningMessage="This folder doesn't contain oneshot" isWarningTriggered={!isFolderOneshotDir} getFolderPath={(): string => oneshotFolder} setFolderPath={(folderPath: string) => setOneshotFolder(folderPath)} openFolderPathSelector={oneshotFolderPathSelector} />
                 <TextButton text="Confirm" className="oneshot-folder-path-confirm-button" onClick={oneshotFolderPathConfirmClicked} />

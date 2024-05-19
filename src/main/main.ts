@@ -41,9 +41,6 @@ function isModHaveConflict(modPath: string): boolean {
 
     for (const otherModConfig of modConfigs) {
         if (otherModConfig[0] !== modPath && otherModConfig[1].enabled && modConfigs.get(modPath)?.enabled) {
-
-            console.log(otherModConfig[1].enabled)
-
             const otherModFileRelativePaths = getAllFiles(otherModConfig[1].modPath);
 
             for (let i = 0; i < otherModFileRelativePaths.length; i++) {
@@ -68,10 +65,8 @@ export async function setupOneshotFilesPaths(): Promise<void> {
 }
 
 export async function updateEvery100ms(): Promise<void> {
-    for (const modConfig of modConfigs) {
-        const modConfigUpdated = modConfig;
-        modConfigUpdated[1].isModHaveConflict = isModHaveConflict(modConfig[0]);
-        modConfigs.set(modConfig[0], modConfigUpdated[1])
+    if (await isSettingsFileExist()) {            
+        await setupModConfigs();
     }
 
     switch (os.platform()) {
@@ -263,16 +258,10 @@ export async function setupModConfigs(): Promise<void> {
             return;
         }
 
-        for (const modData of modConfigs) {
-            if (modData[1].modPath === individualModPath) {
-                return;
-            }
-        }
-
         let isModConfigExist: boolean = false;
 
         fs.readdirSync(individualModPath).forEach(modContentName => {
-            if (modContentName === 'mod_config.json') {
+            if (modContentName == 'mod_config.json') {
                 const modConfigJSON: ModDataJSON = JSON.parse(fs.readFileSync(path.join(`${individualModPath}`, "mod_config.json"), 'utf8'));
                 const modIcon = fs.readFileSync(path.join(`${individualModPath}`, `${modConfigJSON.iconPath}`));
 
@@ -280,7 +269,7 @@ export async function setupModConfigs(): Promise<void> {
                     modPath: individualModPath,
                     isModHaveConflict: isModHaveConflict(individualModPath),
                     dirName: modFolder,
-                    enabled: false,
+                    enabled: true,
                     name: modConfigJSON.name,
                     iconBase64: `data:image/jpeg;base64,${modIcon.toString('base64')}`,
                     author: modConfigJSON.author,
@@ -296,12 +285,19 @@ export async function setupModConfigs(): Promise<void> {
                 modPath: individualModPath,
                 isModHaveConflict: isModHaveConflict(individualModPath),
                 dirName: modFolder,
-                enabled: false,
+                enabled: true,
                 name: modFolder,
                 iconBase64: null,
                 author: null,
                 isOneshotMod: isFolderOneshotMod(individualModPath)
             })
         }
+
+        // const modConfigUpdated = modConfigs.get(individualModPath);
+
+        // if (modConfigUpdated != undefined) {            
+        //     modConfigUpdated[1].isModHaveConflict = isModHaveConflict(individualModPath);
+        //     modConfigs.set(individualModPath, modConfigUpdated[1])
+        // }
     });
 }
