@@ -74,7 +74,6 @@ export default function ModItem({ name, isModHaveConflict, isOneshotMod, modPath
 
     async function openModFolderInFileManager(): Promise<void> {
         await window.api.openFolderInFileManager(modPath);
-        
     }
 
     function deleteModConfirmation(): void {
@@ -115,7 +114,9 @@ export default function ModItem({ name, isModHaveConflict, isOneshotMod, modPath
                     <Popover.Content className="PopoverContent" sideOffset={4} align={"start"}>
                         <div className="mod-item-menu-popup-items">
                             <MenuItem text={enabled ? "Disable" : "Enable"} onClick={enableMod} />
-                            <MenuItem text="Open Mod Folder" onClick={openModFolderInFileManager} />
+                            <Popover.Close asChild>
+                                <MenuItem text="Open Mod Folder" onClick={openModFolderInFileManager} />
+                            </Popover.Close>
                             <MenuItem text="Delete" onClick={deleteModConfirmation} />
                         </div>
                     </Popover.Content>
