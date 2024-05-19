@@ -74,6 +74,7 @@ export default function ModItem({ name, isModHaveConflict, isOneshotMod, modPath
 
     async function openModFolderInFileManager(): Promise<void> {
         await window.api.openFolderInFileManager(modPath);
+        
     }
 
     function deleteModConfirmation(): void {
@@ -122,7 +123,7 @@ export default function ModItem({ name, isModHaveConflict, isOneshotMod, modPath
             </Popover.Root>
 
             <Modal haveCloseButton={false} canClose={false} className="mod-item-delete-warning" openModal={openDeleteModConfirm} closeModal={() => setOpenDeleteModConfirm(false)}>
-                <p className="mod-item-delete-warning-text">Do you want to delete {modPath}?</p>
+                <p className="mod-item-delete-warning-text">Do you want to delete the mod folder at {modPath}?</p>
                 <div className="mod-item-delete-confirm-button-container">
                     <TextButton text="Yes" className="mod-item-delete-confirm-button" onClick={deleteMod} />
                     <TextButton text="No" className="mod-item-delete-confirm-button" onClick={() => setOpenDeleteModConfirm(false)} />
