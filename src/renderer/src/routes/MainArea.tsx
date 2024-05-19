@@ -17,6 +17,10 @@ export default function MainArea(): JSX.Element {
     const [oneshotFolder, setOneshotFolder] = useState('')
     const [modConfigs, setModConfigs] = useState<Map<string, ModData>>(new Map());
     const [updateDelay, setUpdateDelay] = useState(0);
+    const [openNotOneshotMod, setOpenNotOneshotMod] = useState(false);
+    const [openModConflict, setOpenModConflict] = useState(false);
+
+    const [modImportDestinationPath, setModImportDestinationPath] = useState("");
 
     async function runButtonClicked(): Promise<void> {
         await window.api.runOneshot();
@@ -29,13 +33,49 @@ export default function MainArea(): JSX.Element {
             return;
         }
 
-        await window.api.extractMod(modFilePath);
+        const extractDestination: string = await window.api.extractMod(modFilePath);
+
+        setModImportDestinationPath(extractDestination);
     }
+
+    //------------------- works but if you delete the mod and add it again it broke --------------------
+
+
+    useEffect(() => {
+        async function importMod(): Promise<void> {
+            if (!await window.api.isFolderOneshotMod(modImportDestinationPath)) {
+                setOpenNotOneshotMod(true);
+            } else {
+                await modIsOneshotMod();   
+            }    
+        }
+
+        if (modImportDestinationPath == "") {
+            return;
+        }
+
+        importMod();
+    }, [modImportDestinationPath])
+
+    async function modIsOneshotMod(): Promise<void> {
+        setOpenNotOneshotMod(false);
+
+        if (await window.api.isModHaveConflict(modImportDestinationPath)) {
+            setOpenModConflict(true);
+        }
+    }
+
+    async function modIsFine(): Promise<void> {
+        setOpenModConflict(false);
+    }
+
+    // ------------------------------------------------------------------------------------
 
     async function updateEvery100ms(): Promise<void> {
         window.api.updateEvery100ms();
         setModConfigs(await window.api.getModConfigs());
     }
+
  
     useEffect(() => {
         const interval = setInterval(() => {
@@ -114,6 +154,16 @@ export default function MainArea(): JSX.Element {
         }
     }
 
+    async function fileIsNotOneshotMod(): Promise<void> {
+        window.api.deleteMod(modImportDestinationPath);
+        setOpenNotOneshotMod(false);
+    }
+
+    async function modIsConflictWithOtherMod(): Promise<void> {
+        window.api.deleteMod(modImportDestinationPath);
+        setOpenModConflict(false);
+    }
+
     return (
         <div className="main-area">
             <Topbar runButtonClicked={runButtonClicked} importModClicked={importModClicked} />
@@ -121,7 +171,7 @@ export default function MainArea(): JSX.Element {
             <div className="mod-list-container">
                 <div className="mod-list">
                     {Array.from(modConfigs.values()).map((modConfig: ModData) => (
-                        <ModItem key={modConfig.modPath} modPath={modConfig.modPath} isModHaveConflict={modConfig.isModHaveConflict} isOneshotMod={modConfig.isOneshotMod} iconBase64={modConfig.iconBase64 != null ? modConfig.iconBase64 : null} name={modConfig.name} author={modConfig.author != null ? modConfig.author : null} />
+                        <ModItem key={modConfig.modPath} modPath={modConfig.modPath} iconBase64={modConfig.iconBase64 != null ? modConfig.iconBase64 : null} name={modConfig.name} author={modConfig.author != null ? modConfig.author : null} />
                     ))}
                 </div>
             </div>
@@ -130,6 +180,22 @@ export default function MainArea(): JSX.Element {
                 <p className="oneshot-folder-not-selected-warning">Please select Oneshot folder located in steamapps/common</p>
                 <FolderSelector folderNotValidWarningMessage="This folder doesn't contain oneshot" isWarningTriggered={!isFolderOneshotDir} getFolderPath={(): string => oneshotFolder} setFolderPath={(folderPath: string) => setOneshotFolder(folderPath)} openFolderPathSelector={oneshotFolderPathSelector} />
                 <TextButton text="Confirm" className="oneshot-folder-path-confirm-button" onClick={oneshotFolderPathConfirmClicked} />
+            </Modal>
+
+            <Modal haveCloseButton={false} canClose={false} className="not-oneshot-modal" openModal={openNotOneshotMod} closeModal={() => setOpenNotOneshotMod(false)}>
+                <p className="not-oneshot-mod-text">It seems that this file is not a Oneshot Mod</p>
+                <div className="not-oneshot-mod-button-container">
+                    <TextButton text="Load it anyways" className="not-oneshot-mod-modal-button" onClick={modIsOneshotMod} />
+                    <TextButton text="Exit" className="not-oneshot-mod-modal-button" onClick={fileIsNotOneshotMod} />
+                </div>
+            </Modal>
+
+            <Modal haveCloseButton={false} canClose={false} className="not-oneshot-modal" openModal={openModConflict} closeModal={() => setOpenModConflict(false)}>
+                <p className="not-oneshot-mod-text">This Mod have conflict with other mod and loading it will cause weird thing to happen</p>
+                <div className="not-oneshot-mod-button-container">
+                    <TextButton text="Load it anyways" className="not-oneshot-mod-modal-button" onClick={modIsFine} />
+                    <TextButton text="Exit" className="not-oneshot-mod-modal-button" onClick={modIsConflictWithOtherMod} />
+                </div>
             </Modal>
         </div>
     )

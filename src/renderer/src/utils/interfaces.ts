@@ -12,9 +12,7 @@ export interface SettingsData {
 
 export interface ModData {
     name: string;
-    isModHaveConflict: boolean;
     dirName: string;
-    isOneshotMod: boolean;
     enabled: boolean;
     iconBase64: string | null;
     author: string | null;

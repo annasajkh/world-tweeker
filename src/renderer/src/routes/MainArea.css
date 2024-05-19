@@ -31,3 +31,27 @@
     width: 64px;
     height: 32px;
 }
+
+.not-oneshot-modal {
+    max-width: 540px;
+    overflow-wrap: break-word;
+}
+
+.not-oneshot-mod-text {
+    display: flex;
+    margin-bottom: 16px;
+    user-select: none;
+}
+
+.not-oneshot-mod-button-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    margin-top: 16px;
+}
+
+.not-oneshot-mod-modal-button {
+    width: 128px;
+    height: 32px;
+}

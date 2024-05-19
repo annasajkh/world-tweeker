@@ -32,15 +32,16 @@ export async function runOneshot(): Promise<void> {
     }
 }
 
-function isModHaveConflict(modPath: string, enable: boolean): boolean {
+export async function isModHaveConflict(modPath: string): Promise<boolean> {    
     const modRelativeFilePaths = getAllFiles(modPath);
+
 
     for (let i = 0; i < modRelativeFilePaths.length; i++) {
         modRelativeFilePaths[i] = modRelativeFilePaths[i].split(modPath)[1].replace(getPathSeparator(), "").trim();
     }
 
     for (const otherModConfig of modConfigs) {
-        if (otherModConfig[0] !== modPath && otherModConfig[1].enabled && enable) {
+        if (otherModConfig[0] !== modPath && otherModConfig[1].enabled) {
             const otherModFileRelativePaths = getAllFiles(otherModConfig[1].modPath);
 
             for (let i = 0; i < otherModFileRelativePaths.length; i++) {
@@ -118,10 +119,14 @@ export async function importMod(): Promise<string | null> {
     return modFile.filePaths[0];
 }
 
-export async function extractMod(modFilePath: string): Promise<void> {
-    extract(modFilePath, { dir: path.join(`${await getOneshotFolder()}`, "Mods",  modFilePath.split(getPathSeparator()).at(-1)!.split(".")[0]) }, (error): void => {
+export async function extractMod(modFilePath: string): Promise<string> {
+    const extractDestination: string = path.join(`${await getOneshotFolder()}`, "Mods",  modFilePath.split(getPathSeparator()).at(-1)!.split(".")[0]);
+
+    await extract(modFilePath, { dir: extractDestination }, (error): void => {
         console.error(error);
     });
+
+    return extractDestination;
 }
 
 
@@ -198,9 +203,8 @@ export async function isFolderOneshotDir(dirPath: string): Promise<boolean> {
     return checkCount == foldersAndFiles.length;
 }
 
-function isFolderOneshotMod(dirPath: string): boolean {
+export async function isFolderOneshotMod(dirPath: string): Promise<boolean> {
     const foldersAndFiles: string[] = ["Audio", "Data", "Fonts", "Graphics", "Languages", "Wallpaper", "oneshot"];
-    const foldersAndFilesInDirPath: string[] = [];
 
     let checkCount: number = 0;
 
@@ -208,12 +212,11 @@ function isFolderOneshotMod(dirPath: string): boolean {
         return false;
     }
 
-    fs.readdirSync(dirPath).forEach(file => {
-        foldersAndFilesInDirPath.push(file);
-    });
-
+    const foldersAndFilesInDirPath: string[] = fs.readdirSync(dirPath);
+    
     for (const folderOrFileName of foldersAndFiles) {
         for (const folderOrFileNameInDirPath of foldersAndFilesInDirPath) {
+            
             if (folderOrFileNameInDirPath.includes(folderOrFileName)) {
                 checkCount++;
                 break;
@@ -296,13 +299,11 @@ export async function setupModConfigs(): Promise<void> {
                 
                 modConfigs.set(individualModPath, {
                     modPath: individualModPath,
-                    isModHaveConflict: isModHaveConflict(individualModPath, enableData.length !== 0 ? enableData[0].enabled : true),
                     dirName: modFolder,
                     enabled: enableData.length !== 0 ? enableData[0].enabled : true,
                     name: modConfigJSON.name,
                     iconBase64: `data:image/jpeg;base64,${modIcon.toString('base64')}`,
                     author: modConfigJSON.author,
-                    isOneshotMod: isFolderOneshotMod(individualModPath)
                 })
 
                 isModConfigExist = true;
@@ -312,13 +313,11 @@ export async function setupModConfigs(): Promise<void> {
         if (!isModConfigExist) {
             modConfigs.set(individualModPath, {
                 modPath: individualModPath,
-                isModHaveConflict: isModHaveConflict(individualModPath, enableData.length !== 0 ? enableData[0].enabled : true),
                 dirName: modFolder,
                 enabled: enableData.length !== 0 ? enableData[0].enabled : true,
                 name: modFolder,
                 iconBase64: null,
                 author: null,
-                isOneshotMod: isFolderOneshotMod(individualModPath)
             })
         }
     });

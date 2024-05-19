@@ -5,7 +5,7 @@
 import { app, shell, BrowserWindow, ipcMain, IpcMainInvokeEvent, OpenDialogReturnValue } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { deleteMod, extractMod, getModConfig, getModConfigs, getOneshotFolder, importMod, isFolderOneshotDir, isOneshotFilesPathsEmpty, isSettingsFileExist, openFolderInFileManager, openOneshotFolderSelector, readSettingsFile, runOneshot, setModConfig, setModEnabled, setupModConfigs, setupOneshotFilesPaths, updateEvery100ms, writeSettingsFile } from "./main"
+import { deleteMod, extractMod, getModConfig, getModConfigs, getOneshotFolder, importMod, isFolderOneshotDir, isFolderOneshotMod, isModHaveConflict, isOneshotFilesPathsEmpty, isSettingsFileExist, openFolderInFileManager, openOneshotFolderSelector, readSettingsFile, runOneshot, setModConfig, setModEnabled, setupModConfigs, setupOneshotFilesPaths, updateEvery100ms, writeSettingsFile } from "./main"
 import { ModData } from "../renderer/src/utils/interfaces"
 
 function createWindow(): void {
@@ -78,7 +78,9 @@ app.whenReady().then(() => {
     ipcMain.handle('setupOneshotFilesPaths', async (_event: IpcMainInvokeEvent): Promise<void> => setupOneshotFilesPaths());
     ipcMain.handle("isOneshotFilesPathsEmpty", async (_event: IpcMainInvokeEvent): Promise<boolean> => isOneshotFilesPathsEmpty());
     ipcMain.handle('importMod', async (_event: IpcMainInvokeEvent): Promise<string | null> => await importMod());
-    ipcMain.handle('extractMod', async (_event: IpcMainInvokeEvent, modFilePath: string): Promise<void> => await extractMod(modFilePath));
+    ipcMain.handle('extractMod', async (_event: IpcMainInvokeEvent, modFilePath: string): Promise<string> => await extractMod(modFilePath));
+    ipcMain.handle('isFolderOneshotMod', async (_event: IpcMainInvokeEvent, dirPath: string): Promise<boolean> => await isFolderOneshotMod(dirPath));
+    ipcMain.handle('isModHaveConflict', async (_event: IpcMainInvokeEvent, modPath: string): Promise<boolean> => await isModHaveConflict(modPath));
     
     app.on('activate', function () {
         // On macOS it"s common to re-create a window in the app when the
