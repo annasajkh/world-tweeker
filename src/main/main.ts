@@ -61,7 +61,12 @@ export async function isOneshotFilesPathsEmpty(): Promise<boolean> {
 }
 
 export async function setupOneshotFilesPaths(): Promise<void> {
-    oneshotFilePaths = getAllFiles(await getOneshotFolder());
+    const oneshotFolder: string | null = await getOneshotFolder();
+    if (oneshotFolder == null) {
+        return;
+    }
+    
+    oneshotFilePaths = getAllFiles(oneshotFolder);
 }
 
 export async function updateEvery100ms(): Promise<void> {
@@ -136,7 +141,7 @@ export async function readSettingsFile(): Promise<string> {
     }
 }
 
-export async function getOneshotFolder(): Promise<string> {
+export async function getOneshotFolder(): Promise<string | null> {
     const isFileExist = await isSettingsFileExist();
 
     if (isFileExist) {
@@ -148,11 +153,13 @@ export async function getOneshotFolder(): Promise<string> {
         if (isOneshotFolder) {
             return settingsJson["oneshotPath"];
         } else {
-            throw new Error("Error: Folder is not oneshot folder")
+            console.error("Error: Folder is not oneshot folder")
+            return null;
         }
 
     } else {
-        throw new Error("Error: Folder doesn't exist");
+        console.error("Error: Folder doesn't exist");
+        return null;
     }
 }
 
@@ -240,12 +247,20 @@ export async function setModConfig(key: string, config: ModData): Promise<void> 
 }
 
 export async function deleteMod(modPath: string): Promise<void> {
+    if (modPath.trim() === "") {
+        return;
+    }
     fs.rmSync(modPath, { recursive: true, force: true });
     modConfigs.delete(modPath);
 }
 
 export async function setupModConfigs(): Promise<void> {
-    const modDirectory: string = path.join(`${await getOneshotFolder()}`, "Mods");
+    const oneshotFolder: string | null = await getOneshotFolder();
+    if (oneshotFolder == null) {
+        return;
+    }
+
+    const modDirectory: string = path.join(`${oneshotFolder}`, "Mods");
 
     if (!fs.existsSync(modDirectory)) {
         fs.mkdirSync(modDirectory);
@@ -292,12 +307,5 @@ export async function setupModConfigs(): Promise<void> {
                 isOneshotMod: isFolderOneshotMod(individualModPath)
             })
         }
-
-        // const modConfigUpdated = modConfigs.get(individualModPath);
-
-        // if (modConfigUpdated != undefined) {            
-        //     modConfigUpdated[1].isModHaveConflict = isModHaveConflict(individualModPath);
-        //     modConfigs.set(individualModPath, modConfigUpdated[1])
-        // }
     });
 }

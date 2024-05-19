@@ -77,6 +77,7 @@
 }
 
 .mod-item-delete-warning-text {
+    display: flex;
     margin-bottom: 16px;
     user-select: none;
 }
