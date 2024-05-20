@@ -12,6 +12,9 @@ import { getAllFiles, getPathSeparator } from "./utils";
 const extract = require('extract-zip');
 
 const modConfigs: Map<string, ModData> = new Map<string, ModData>();
+const oneshotDirFilter: string[] = ["Audio", "Data", "Fonts", "Graphics", "Languages", "Wallpaper", "steamshim", "oneshot"];
+const oneshotModFilter: string[] = ["Audio", "Data", "Fonts", "Graphics", "Languages", "Wallpaper", "oneshot"];
+
 let oneshotIsRunning: boolean = false;
 let oneshotFilePaths: string[] = [];
 
@@ -35,13 +38,12 @@ export async function runOneshot(): Promise<void> {
 export async function isModHaveConflict(modPath: string): Promise<boolean> {    
     const modRelativeFilePaths = getAllFiles(modPath);
 
-
     for (let i = 0; i < modRelativeFilePaths.length; i++) {
         modRelativeFilePaths[i] = modRelativeFilePaths[i].split(modPath)[1].replace(getPathSeparator(), "").trim();
     }
 
     for (const otherModConfig of modConfigs) {
-        if (otherModConfig[0] !== modPath && otherModConfig[1].enabled) {
+        if (otherModConfig[0] !== modPath) {
             const otherModFileRelativePaths = getAllFiles(otherModConfig[1].modPath);
 
             for (let i = 0; i < otherModFileRelativePaths.length; i++) {
@@ -178,7 +180,6 @@ export async function openOneshotFolderSelector(): Promise<OpenDialogReturnValue
 }
 
 export async function isFolderOneshotDir(dirPath: string): Promise<boolean> {
-    const foldersAndFiles: string[] = ["Audio", "Data", "Fonts", "Graphics", "Languages", "Wallpaper", "steamshim", "oneshot"];
     const foldersAndFilesInDirPath: string[] = [];
 
     let checkCount: number = 0;
@@ -191,7 +192,7 @@ export async function isFolderOneshotDir(dirPath: string): Promise<boolean> {
         foldersAndFilesInDirPath.push(file);
     });
 
-    for (const folderOrFileName of foldersAndFiles) {
+    for (const folderOrFileName of oneshotDirFilter) {
         for (const folderOrFileNameInDirPath of foldersAndFilesInDirPath) {
             if (folderOrFileNameInDirPath.includes(folderOrFileName)) {
                 checkCount++;
@@ -200,12 +201,10 @@ export async function isFolderOneshotDir(dirPath: string): Promise<boolean> {
         }
     }
 
-    return checkCount == foldersAndFiles.length;
+    return checkCount == oneshotDirFilter.length;
 }
 
 export async function isFolderOneshotMod(dirPath: string): Promise<boolean> {
-    const foldersAndFiles: string[] = ["Audio", "Data", "Fonts", "Graphics", "Languages", "Wallpaper", "oneshot"];
-
     let checkCount: number = 0;
 
     if (dirPath.trim() == "") {
@@ -214,7 +213,7 @@ export async function isFolderOneshotMod(dirPath: string): Promise<boolean> {
 
     const foldersAndFilesInDirPath: string[] = fs.readdirSync(dirPath);
     
-    for (const folderOrFileName of foldersAndFiles) {
+    for (const folderOrFileName of oneshotModFilter) {
         for (const folderOrFileNameInDirPath of foldersAndFilesInDirPath) {
             
             if (folderOrFileNameInDirPath.includes(folderOrFileName)) {

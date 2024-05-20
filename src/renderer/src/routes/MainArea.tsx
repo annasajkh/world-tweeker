@@ -17,9 +17,9 @@ export default function MainArea(): JSX.Element {
     const [oneshotFolder, setOneshotFolder] = useState('')
     const [modConfigs, setModConfigs] = useState<Map<string, ModData>>(new Map());
     const [updateDelay, setUpdateDelay] = useState(0);
+    
     const [openNotOneshotMod, setOpenNotOneshotMod] = useState(false);
     const [openModConflict, setOpenModConflict] = useState(false);
-
     const [modImportDestinationPath, setModImportDestinationPath] = useState("");
 
     async function runButtonClicked(): Promise<void> {
@@ -40,7 +40,6 @@ export default function MainArea(): JSX.Element {
 
     //------------------- works but if you delete the mod and add it again it broke --------------------
 
-
     useEffect(() => {
         async function importMod(): Promise<void> {
             if (!await window.api.isFolderOneshotMod(modImportDestinationPath)) {
@@ -59,7 +58,7 @@ export default function MainArea(): JSX.Element {
 
     async function modIsOneshotMod(): Promise<void> {
         setOpenNotOneshotMod(false);
-
+        
         if (await window.api.isModHaveConflict(modImportDestinationPath)) {
             setOpenModConflict(true);
         }
