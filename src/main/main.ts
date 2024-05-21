@@ -9,6 +9,8 @@ import path from "path";
 import { EnableData, ModData, ModDataJSON, SettingsData } from "../renderer/src/utils/interfaces";
 import { shell } from 'electron';
 import { getAllFiles, getPathSeparator } from "./utils";
+import { Marshal } from "ts-marshal";
+
 const extract = require('extract-zip');
 
 const modConfigs: Map<string, ModData> = new Map<string, ModData>();
@@ -21,19 +23,23 @@ let allOneshotFilesPathTrimmed: string[] = [];
 
 export async function runOneshot(): Promise<void> {
     const pathDestination: string = path.join(app.getPath('userData'), 'OneshotTemp')
-    const [pathListFull, pathListRelative] = await getOneshotFilesThatTheModIsTryingToModify();
+    const [pathListFull, pathListRelative, allModFilesFiltered] = await getOneshotFilesThatTheModIsTryingToModify();
 
     
-    if (!fs.existsSync(pathDestination)) {
-        fs.mkdirSync(pathDestination);
-    }
+    // if (!fs.existsSync(pathDestination)) {
+    //     fs.mkdirSync(pathDestination);
+    // }
 
-    // copy the oneshot files that the mod is trying to modify
-    for (let i = 0; i < pathListFull.length; i++) {
-        recursivelyCreateFolderPath(pathDestination, pathListRelative[i])
-        fs.copyFileSync(pathListFull[i], path.join(pathDestination, pathListRelative[i]));   
-    }
+    // // copy the oneshot files that the mod is trying to modify
+    // for (let i = 0; i < pathListFull.length; i++) {
+    //     recursivelyCreateFolderPath(pathDestination, pathListRelative[i])
+    //     fs.copyFileSync(pathListFull[i], path.join(pathDestination, pathListRelative[i]));   
+    // }
 
+    for(let i = 0; i < pathListFull.length; i++) {
+        applyModificationRXDataExcludeScripts(path.join((await getOneshotFolder())!, pathListRelative[i]), allModFilesFiltered[i]);
+        break;
+    }
     
     // switch (os.platform()) {
     //     case 'win32': {
@@ -49,6 +55,19 @@ export async function runOneshot(): Promise<void> {
     //     }
     // }
 }
+
+function applyModificationRXDataExcludeScripts(fileToModifyPath: string, fileThatModifyItPath: string): void {
+    // const fileToModify = Marshal.load(fs.readFileSync(fileToModifyPath));
+    // const fileThatModifyIt = Marshal.load(fs.readFileSync(fileThatModifyItPath));
+
+    console.log(fileToModifyPath);
+    // console.log(fileToModify);
+
+    console.log(fileThatModifyItPath);
+    // console.log(fileThatModifyIt);
+
+}
+
 
 function recursivelyCreateFolderPath(startingPath: string, relativePathToCreate: string): void {
     let pathBridge = startingPath;
@@ -66,27 +85,39 @@ function recursivelyCreateFolderPath(startingPath: string, relativePathToCreate:
 }
 
 
-async function getOneshotFilesThatTheModIsTryingToModify(): Promise<[string[], string[]]> {
-    const fullPath: string[] = [];
-    const relativePath: string[] = [];
-    const allModFilesPathTrimmed: string[] = []
+async function getOneshotFilesThatTheModIsTryingToModify(): Promise<[string[], string[], string[]]> {
+    const fullPathList: string[] = [];
+    const relativePathList: string[] = [];
+    const allModPathList: string[] = [];
+    const modPathListFiltered: string[] = [];
+    const allModFilesPathTrimmed: string[] = [];
 
     // get all the mod files of the mod that is enable and trim it
     for (const modConfig of modConfigs) {
         if (modConfig[1].enabled) {
-            allModFilesPathTrimmed.push(...trimAllPathToBeRelative(getAllFiles(modConfig[1].modPath), modConfig[1].modPath));
+            const allModFiles = getAllFiles(modConfig[1].modPath);
+
+            allModFilesPathTrimmed.push(...trimAllPathToBeRelative(allModFiles, modConfig[1].modPath));
+            allModPathList.push(...allModFiles);
         }
     }
 
     // find what oneshot file the mod is trying to modify and add that to result
-    for (const path of allOneshotFilesPathTrimmed) {
-        if (allModFilesPathTrimmed.indexOf(path) > -1) {
-            fullPath.push(`${await getOneshotFolder()}${getPathSeparator()}${path}`);
-            relativePath.push(path);
+    for (let i = 0; i < allOneshotFilesPathTrimmed.length; i++) {
+        if (allModFilesPathTrimmed.indexOf(allOneshotFilesPathTrimmed[i]) > -1) {
+            fullPathList.push(`${await getOneshotFolder()}${getPathSeparator()}${allOneshotFilesPathTrimmed[i]}`);
+            relativePathList.push(allOneshotFilesPathTrimmed[i]);
         }
     }
 
-    return [fullPath, relativePath];
+    // find mod rxdata that is in oneshot rxdata
+    // for (let i = 0; i < allModPathList.length; i++) {
+    //     if (allModFilesPathTrimmed.indexOf(allOneshotFilesPathTrimmed[i]) > -1) {
+    //         modPathListFiltered.push(allModPathList[i])
+    //     }
+    // }
+    
+    return [fullPathList, relativePathList, modPathListFiltered];
 }
 
 function trimAllPathToBeRelative(paths: string[], pathToRemove: string): string[] {
