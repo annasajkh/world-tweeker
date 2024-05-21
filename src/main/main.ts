@@ -304,7 +304,7 @@ export async function deleteMod(modPath: string): Promise<void> {
 
     // i'm scared of this
     // should be fine though so many fail safe in place
-    fs.rmSync(modPath, { recursive: true, force: true });
+    fs.rmSync(modPath, { recursive: true, force: true }); // >~<
     modConfigs.delete(modPath);
 }
 
