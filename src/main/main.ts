@@ -4,7 +4,7 @@
 import { exec, spawn } from 'child_process'
 import os from 'os'
 import { OpenDialogReturnValue, app, dialog } from "electron"
-import fs from 'fs';
+import fs, { mkdir } from 'fs';
 import path from "path";
 import { EnableData, ModData, ModDataJSON, SettingsData } from "../renderer/src/utils/interfaces";
 import { shell } from 'electron';
@@ -16,13 +16,24 @@ const oneshotDirFilter: string[] = ["Audio", "Data", "Fonts", "Graphics", "Langu
 const oneshotModFilter: string[] = ["Audio", "Data", "Fonts", "Graphics", "Languages", "Wallpaper", "oneshot"];
 
 let oneshotIsRunning: boolean = false;
-let oneshotFilePaths: string[] = [];
+let allOneshotFilesPathTrimmed: string[] = [];
 
 
 export async function runOneshot(): Promise<void> {
-    for (const modConfig of modConfigs) {
-        console.log(getOneshotFilesThatShouldMove(modConfig[1]));
+    const pathDestination: string = path.join(app.getPath('userData'), 'OneshotTemp')
+    const [pathListFull, pathListRelative] = await getOneshotFilesThatTheModIsTryingToModify();
+
+    
+    if (!fs.existsSync(pathDestination)) {
+        fs.mkdirSync(pathDestination);
     }
+
+    // copy the oneshot files that the mod is trying to modify
+    for (let i = 0; i < pathListFull.length; i++) {
+        recursivelyCreateFolderPath(pathDestination, pathListRelative[i])
+        fs.copyFileSync(pathListFull[i], path.join(pathDestination, pathListRelative[i]));   
+    }
+
     
     // switch (os.platform()) {
     //     case 'win32': {
@@ -39,42 +50,64 @@ export async function runOneshot(): Promise<void> {
     // }
 }
 
+function recursivelyCreateFolderPath(startingPath: string, relativePathToCreate: string): void {
+    let pathBridge = startingPath;
+    const folderNameList: string[] = relativePathToCreate.split(getPathSeparator());
 
-function getOneshotFilesThatShouldMove(mod: ModData): string[] {
-    const result: string[] = [];
-    const modFiles = getAllFiles(mod.modPath);
+    folderNameList.pop();
 
-    for (let i = 0; i < modFiles.length; i++) {
-        modFiles[i] = trimPathToBeRelative(modFiles[i], mod.modPath);
+    for (const folderName of folderNameList) {
+        pathBridge = path.join(pathBridge, folderName);
+
+        if (!fs.existsSync(pathBridge)) {
+            fs.mkdirSync(pathBridge);
+        }
     }
-
-    return result;
 }
 
-function trimPathToBeRelative(path: string, pathToRemove: string): string {
+
+async function getOneshotFilesThatTheModIsTryingToModify(): Promise<[string[], string[]]> {
+    const fullPath: string[] = [];
+    const relativePath: string[] = [];
+    const allModFilesPathTrimmed: string[] = []
+
+    // get all the mod files of the mod that is enable and trim it
+    for (const modConfig of modConfigs) {
+        if (modConfig[1].enabled) {
+            allModFilesPathTrimmed.push(...trimAllPathToBeRelative(getAllFiles(modConfig[1].modPath), modConfig[1].modPath));
+        }
+    }
+
+    // find what oneshot file the mod is trying to modify and add that to result
+    for (const path of allOneshotFilesPathTrimmed) {
+        if (allModFilesPathTrimmed.indexOf(path) > -1) {
+            fullPath.push(`${await getOneshotFolder()}${getPathSeparator()}${path}`);
+            relativePath.push(path);
+        }
+    }
+
+    return [fullPath, relativePath];
+}
+
+function trimAllPathToBeRelative(paths: string[], pathToRemove: string): string[] {
     // keep replacing until the path become relative
-    return path.replace(pathToRemove, "").replace(getPathSeparator(), "").trim();
+    return paths.map((path: string) => path.replace(pathToRemove, "").replace(getPathSeparator(), "").trim());
 }
 
 export async function isModHaveConflict(modPath: string): Promise<boolean> {    
-    const modRelativeFilePaths = getAllFiles(modPath);
-
-    // trim the path to be relative
-    for (let i = 0; i < modRelativeFilePaths.length; i++) {
-        modRelativeFilePaths[i] = trimPathToBeRelative(modRelativeFilePaths[i], modPath);
-    }
+    const modRelativeFilePaths = trimAllPathToBeRelative(getAllFiles(modPath), modPath);
 
     for (const otherModConfig of modConfigs) {
         // check if the otherModConfig it's not the one that is being compared to
         if (otherModConfig[0] !== modPath) {
-            const otherModFileRelativePaths = getAllFiles(otherModConfig[1].modPath);
+            const otherModFileRelativePaths = trimAllPathToBeRelative(getAllFiles(otherModConfig[1].modPath), otherModConfig[0]);
 
             for (let i = 0; i < otherModFileRelativePaths.length; i++) {
                 // trim the path to be relative
-                otherModFileRelativePaths[i] = trimPathToBeRelative(otherModFileRelativePaths[i], otherModConfig[0]);
 
                 // check if otherModFileRelativePaths[i] is in modRelativeFilePaths array
-                if (modRelativeFilePaths.indexOf(otherModFileRelativePaths[i]) > -1) {
+                // and the file name is not .rxdata file
+                if (modRelativeFilePaths.indexOf(otherModFileRelativePaths[i]) > -1 && !otherModFileRelativePaths[i].includes(".rxdata")) {
                     return true;
                 }
             }
@@ -85,7 +118,7 @@ export async function isModHaveConflict(modPath: string): Promise<boolean> {
 }
 
 export async function isOneshotFilesPathsEmpty(): Promise<boolean> {
-    return oneshotFilePaths.length == 0;
+    return allOneshotFilesPathTrimmed.length == 0;
 }
 
 // fill the oneshotFilePaths
@@ -96,7 +129,7 @@ export async function setupOneshotFilesPaths(): Promise<void> {
         return;
     }
     
-    oneshotFilePaths = getAllFiles(oneshotFolder);
+    allOneshotFilesPathTrimmed = trimAllPathToBeRelative(getAllFiles(oneshotFolder), oneshotFolder);
 }
 
 // update every 100 ms called from the renderer process
@@ -241,7 +274,6 @@ export async function isFolderOneshotMod(dirPath: string): Promise<boolean> {
     // check all the oneshotModFilter strings if it's in each of foldersAndFilesInDirPath
     for (const folderOrFileName of oneshotModFilter) {
         for (const folderOrFileNameInDirPath of foldersAndFilesInDirPath) {
-            
             if (folderOrFileNameInDirPath.includes(folderOrFileName)) {
                 return true;
             }

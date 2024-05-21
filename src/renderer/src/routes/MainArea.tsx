@@ -10,9 +10,12 @@ import { ModData, SettingsData } from "@renderer/utils/interfaces";
 import TextButton from "@renderer/components/TextButton";
 import ModItem from "@renderer/components/ModItem";
 
+import loadingImgPath from "../assets/animations/loading.gif"
+
 export default function MainArea(): JSX.Element {
     const [openOneShotFolderInvalidModal, setOpenOneShotFolderInvalidModal] = useState(false);
     const [isFolderOneshotDir, setIsFolderOneshotDir] = useState(false);
+    const [modImportCounter, setModImportCounter] = useState(0);
 
     const [oneshotFolder, setOneshotFolder] = useState('')
     const [modConfigs, setModConfigs] = useState<Map<string, ModData>>(new Map());
@@ -20,6 +23,7 @@ export default function MainArea(): JSX.Element {
     
     const [openNotOneshotMod, setOpenNotOneshotMod] = useState(false);
     const [openModConflict, setOpenModConflict] = useState(false);
+    const [openModLoading, setOpenModLoading] = useState(false);
 
     // eslint-disable-next-line prefer-const
     let [modImportDestinationPath, setModImportDestinationPath] = useState("");
@@ -71,23 +75,31 @@ export default function MainArea(): JSX.Element {
             return;
         }
 
-        const extractDestination: Promise<string> = window.api.extractMod(modFilePath);
+        setOpenModLoading(true);
 
-        // when extract is done call this callback
-        extractDestination.then(async (resultString) => {
-            setModImportDestinationPath(resultString);
+        const extractDestination: string = await window.api.extractMod(modFilePath);
 
-            if (resultString == "") {
+        setModImportDestinationPath(extractDestination);
+        setModImportCounter(counter => counter + 1);
+    }
+
+    useEffect(() => {
+        async function importMod(): Promise<void> {
+            if (modImportDestinationPath == "") {
                 return;
             }
-
+    
             if (!await window.api.isFolderOneshotMod(modImportDestinationPath)) {
-                setOpenNotOneshotMod(true);
+                setOpenModLoading(false);
+                setOpenNotOneshotMod(true);    
             } else {
+                setOpenModLoading(false);
                 await modIsOneshotMod();   
             }
-        })
-    }
+        }
+
+        importMod();
+    }, [modImportDestinationPath, modImportCounter])
 
     async function modIsOneshotMod(): Promise<void> {
         setOpenNotOneshotMod(false);
@@ -175,13 +187,13 @@ export default function MainArea(): JSX.Element {
             </div>
 
             <Modal haveCloseButton={false} canClose={isFolderOneshotDir} className="" openModal={openOneShotFolderInvalidModal} closeModal={() => setOpenOneShotFolderInvalidModal(false)}>
-                <p className="oneshot-folder-not-selected-warning">Please select Oneshot folder located in steamapps/common</p>
+                <p className="oneshot-folder-not-selected-warning">Please select oneshot folder located in steamapps/common</p>
                 <FolderSelector folderNotValidWarningMessage="This folder doesn't contain oneshot" isWarningTriggered={!isFolderOneshotDir} getFolderPath={(): string => oneshotFolder} setFolderPath={(folderPath: string) => setOneshotFolder(folderPath)} openFolderPathSelector={oneshotFolderPathSelector} />
                 <TextButton text="Confirm" className="oneshot-folder-path-confirm-button" onClick={oneshotFolderPathConfirmClicked} />
             </Modal>
 
             <Modal haveCloseButton={false} canClose={false} className="not-oneshot-modal" openModal={openNotOneshotMod} closeModal={() => setOpenNotOneshotMod(false)}>
-                <p className="not-oneshot-mod-text">It seems that this file is not a Oneshot Mod</p>
+                <p className="not-oneshot-mod-text">It seems that this file is not a oneshot mod</p>
                 <div className="not-oneshot-mod-button-container">
                     <TextButton text="Load it anyways" className="not-oneshot-mod-modal-button" onClick={modIsOneshotMod} />
                     <TextButton text="Exit" className="not-oneshot-mod-modal-button" onClick={fileIsNotOneshotMod} />
@@ -189,10 +201,17 @@ export default function MainArea(): JSX.Element {
             </Modal>
 
             <Modal haveCloseButton={false} canClose={false} className="not-oneshot-modal" openModal={openModConflict} closeModal={() => setOpenModConflict(false)}>
-                <p className="not-oneshot-mod-text">This Mod have conflict with other mod and loading it will cause weird thing to happen</p>
+                <p className="not-oneshot-mod-text">This mod have conflict with other mod and loading it will cause weird thing to happen</p>
                 <div className="not-oneshot-mod-button-container">
                     <TextButton text="Load it anyways" className="not-oneshot-mod-modal-button" onClick={modIsFine} />
                     <TextButton text="Exit" className="not-oneshot-mod-modal-button" onClick={modIsConflictWithOtherMod} />
+                </div>
+            </Modal>
+
+            <Modal haveCloseButton={false} canClose={false} className="" openModal={openModLoading} closeModal={() => setOpenModLoading(false)}>
+                <div className="loading-mod-container">
+                    <p className="loading-mod-text">Importing mod...</p>
+                    <img src={loadingImgPath} width="64" height="64" />
                 </div>
             </Modal>
         </div>

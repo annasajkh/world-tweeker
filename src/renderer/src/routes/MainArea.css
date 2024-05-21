@@ -55,3 +55,16 @@
     width: 128px;
     height: 32px;
 }
+
+.loading-mod-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.loading-mod-text {
+    display: flex;
+    margin-bottom: 16px;
+    user-select: none;
+}
