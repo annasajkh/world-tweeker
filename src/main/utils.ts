@@ -3,6 +3,7 @@ import path from "path";
 import fs from 'fs';
 import os from 'os'
 
+// get path separator depending on the os this app is running on
 export function getPathSeparator(): string {
     let separator: string = "";
 
@@ -23,6 +24,7 @@ export function getPathSeparator(): string {
     return separator;
 }
 
+// get all the files of a directory recursively
 export function getAllFiles(pathDir: string): string[] {
     const result: string[] = [];
 

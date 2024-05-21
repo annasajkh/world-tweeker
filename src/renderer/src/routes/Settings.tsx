@@ -15,6 +15,7 @@ export default function Settings(): JSX.Element {
     useEffect(() => {
         async function setup(): Promise<void> {
             if (await window.api.isSettingsFileExist()) {
+                // load the settings and set the states
                 const settings: string = await window.api.readSettingsFile();
                 const settingsJson: SettingsData = JSON.parse(settings);
 
@@ -30,6 +31,7 @@ export default function Settings(): JSX.Element {
 
 
     async function oneshotFolderWriteSettingsFile(fileContent: string): Promise<void> {
+        // damn this is shitty
         const settings: SettingsData = JSON.parse(await window.api.readSettingsFile());
 
         const settingsJson: SettingsData = {

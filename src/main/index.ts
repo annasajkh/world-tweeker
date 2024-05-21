@@ -60,6 +60,7 @@ app.whenReady().then(() => {
 
     createWindow();
 
+    // the bridge to the renderer process
     ipcMain.handle('runOneshot', async (_event: IpcMainInvokeEvent): Promise<void> => await runOneshot());
     ipcMain.handle('openOneshotFolderSelector', async (_event: IpcMainInvokeEvent): Promise<OpenDialogReturnValue> => await openOneshotFolderSelector());
     ipcMain.handle('isSettingsFileExist', async (_event: IpcMainInvokeEvent): Promise<boolean> => await isSettingsFileExist());

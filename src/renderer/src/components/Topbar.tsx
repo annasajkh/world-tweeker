@@ -10,7 +10,6 @@ interface Props {
     importModClicked: () => void;
 }
 
-
 export default function Topbar({ runButtonClicked, importModClicked }: Props): JSX.Element {
     return (
         <div className="top-bar">

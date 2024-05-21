@@ -20,77 +20,17 @@ export default function MainArea(): JSX.Element {
     
     const [openNotOneshotMod, setOpenNotOneshotMod] = useState(false);
     const [openModConflict, setOpenModConflict] = useState(false);
-    const [modImportDestinationPath, setModImportDestinationPath] = useState("");
 
-    async function runButtonClicked(): Promise<void> {
-        await window.api.runOneshot();
-    }
+    // eslint-disable-next-line prefer-const
+    let [modImportDestinationPath, setModImportDestinationPath] = useState("");
 
-    async function importModClicked(): Promise<void> {
-        const modFilePath: string | null =  await window.api.importMod();
-
-        if (modFilePath == null) {
-            return;
-        }
-
-        const extractDestination: string = await window.api.extractMod(modFilePath);
-
-        setModImportDestinationPath(extractDestination);
-    }
-
-    //------------------- works but if you delete the mod and add it again it broke --------------------
-
-    useEffect(() => {
-        async function importMod(): Promise<void> {
-            if (!await window.api.isFolderOneshotMod(modImportDestinationPath)) {
-                setOpenNotOneshotMod(true);
-            } else {
-                await modIsOneshotMod();   
-            }    
-        }
-
-        if (modImportDestinationPath == "") {
-            return;
-        }
-
-        importMod();
-    }, [modImportDestinationPath])
-
-    async function modIsOneshotMod(): Promise<void> {
-        setOpenNotOneshotMod(false);
-        
-        if (await window.api.isModHaveConflict(modImportDestinationPath)) {
-            setOpenModConflict(true);
-        }
-    }
-
-    async function modIsFine(): Promise<void> {
-        setOpenModConflict(false);
-    }
-
-    // ------------------------------------------------------------------------------------
-
-    async function updateEvery100ms(): Promise<void> {
-        window.api.updateEvery100ms();
-        setModConfigs(await window.api.getModConfigs());
-    }
-
- 
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setUpdateDelay(updateDelay + 1);
-
-            updateEvery100ms();
-        }, 100);
-
-        return () => clearInterval(interval);
-    }, [updateDelay]);
-
+    // run when the component first run
     useEffect(() => {
         async function isSettingsFileExist(): Promise<void> {
             const isFileExist = await window.api.isSettingsFileExist();
 
-            if (isFileExist) {
+            if (isFileExist) { 
+                // load the settings and set the states
                 const settings: string = await window.api.readSettingsFile();
                 const settingsJson: SettingsData = JSON.parse(settings);
 
@@ -110,14 +50,72 @@ export default function MainArea(): JSX.Element {
         }
 
         async function main(): Promise<void> {
+            await isSettingsFileExist();
+
             if (window.api.isOneshotFilesPathsEmpty()) {
                 window.api.setupOneshotFilesPaths();   
             }
         }
 
-        isSettingsFileExist();
         main();
     }, [])
+
+    async function runButtonClicked(): Promise<void> {
+        await window.api.runOneshot();
+    }
+
+    async function importModClicked(): Promise<void> {
+        const modFilePath: string | null =  await window.api.importMod();
+
+        if (modFilePath == null) {
+            return;
+        }
+
+        const extractDestination: Promise<string> = window.api.extractMod(modFilePath);
+
+        // when extract is done call this callback
+        extractDestination.then(async (resultString) => {
+            setModImportDestinationPath(resultString);
+
+            if (resultString == "") {
+                return;
+            }
+
+            if (!await window.api.isFolderOneshotMod(modImportDestinationPath)) {
+                setOpenNotOneshotMod(true);
+            } else {
+                await modIsOneshotMod();   
+            }
+        })
+    }
+
+    async function modIsOneshotMod(): Promise<void> {
+        setOpenNotOneshotMod(false);
+        
+        if (await window.api.isModHaveConflict(modImportDestinationPath)) {
+            setOpenModConflict(true);
+        }
+    }
+
+    async function modIsFine(): Promise<void> {
+        setOpenModConflict(false);
+    }
+
+    async function updateEvery100ms(): Promise<void> {
+        window.api.updateEvery100ms();
+        setModConfigs(await window.api.getModConfigs());
+    }
+
+    // the 100 ms interval clock
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setUpdateDelay(updateDelay + 1);
+
+            updateEvery100ms();
+        }, 100);
+
+        return () => clearInterval(interval);
+    }, [updateDelay]);
 
     async function oneshotFolderPathSelector(): Promise<void> {
         const result: any = await window.api.openOneshotFolderSelector();
@@ -132,6 +130,7 @@ export default function MainArea(): JSX.Element {
     async function oneshotFolderPathConfirmClicked(): Promise<void> {
         if (await window.api.isFolderOneshotDir(oneshotFolder)) {
             if (await window.api.isSettingsFileExist()) {
+                // this is shitty but it work
                 const settings: SettingsData = JSON.parse(await window.api.readSettingsFile());
 
                 const settingsJson: SettingsData = {

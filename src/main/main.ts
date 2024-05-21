@@ -18,37 +18,62 @@ const oneshotModFilter: string[] = ["Audio", "Data", "Fonts", "Graphics", "Langu
 let oneshotIsRunning: boolean = false;
 let oneshotFilePaths: string[] = [];
 
+
 export async function runOneshot(): Promise<void> {
-    
-    switch (os.platform()) {
-        case 'win32': {
-            spawn('explorer', ['steam://rungameid/420530']);
-            break;
-        }
-        case 'linux': {
-            spawn('xdg-open', ['steam://rungameid/420530'])
-            break;
-        }
-        default: {
-            throw new Error('Unsupported platform')
-        }
+    for (const modConfig of modConfigs) {
+        console.log(getOneshotFilesThatShouldMove(modConfig[1]));
     }
+    
+    // switch (os.platform()) {
+    //     case 'win32': {
+    //         spawn('explorer', ['steam://rungameid/420530']);
+    //         break;
+    //     }
+    //     case 'linux': {
+    //         spawn('xdg-open', ['steam://rungameid/420530'])
+    //         break;
+    //     }
+    //     default: {
+    //         throw new Error('Unsupported platform')
+    //     }
+    // }
+}
+
+
+function getOneshotFilesThatShouldMove(mod: ModData): string[] {
+    const result: string[] = [];
+    const modFiles = getAllFiles(mod.modPath);
+
+    for (let i = 0; i < modFiles.length; i++) {
+        modFiles[i] = trimPathToBeRelative(modFiles[i], mod.modPath);
+    }
+
+    return result;
+}
+
+function trimPathToBeRelative(path: string, pathToRemove: string): string {
+    // keep replacing until the path become relative
+    return path.replace(pathToRemove, "").replace(getPathSeparator(), "").trim();
 }
 
 export async function isModHaveConflict(modPath: string): Promise<boolean> {    
     const modRelativeFilePaths = getAllFiles(modPath);
 
+    // trim the path to be relative
     for (let i = 0; i < modRelativeFilePaths.length; i++) {
-        modRelativeFilePaths[i] = modRelativeFilePaths[i].split(modPath)[1].replace(getPathSeparator(), "").trim();
+        modRelativeFilePaths[i] = trimPathToBeRelative(modRelativeFilePaths[i], modPath);
     }
 
     for (const otherModConfig of modConfigs) {
+        // check if the otherModConfig it's not the one that is being compared to
         if (otherModConfig[0] !== modPath) {
             const otherModFileRelativePaths = getAllFiles(otherModConfig[1].modPath);
 
             for (let i = 0; i < otherModFileRelativePaths.length; i++) {
-                otherModFileRelativePaths[i] = otherModFileRelativePaths[i].split(otherModConfig[0])[1].replace(getPathSeparator(), "").trim();
+                // trim the path to be relative
+                otherModFileRelativePaths[i] = trimPathToBeRelative(otherModFileRelativePaths[i], otherModConfig[0]);
 
+                // check if otherModFileRelativePaths[i] is in modRelativeFilePaths array
                 if (modRelativeFilePaths.indexOf(otherModFileRelativePaths[i]) > -1) {
                     return true;
                 }
@@ -63,8 +88,10 @@ export async function isOneshotFilesPathsEmpty(): Promise<boolean> {
     return oneshotFilePaths.length == 0;
 }
 
+// fill the oneshotFilePaths
 export async function setupOneshotFilesPaths(): Promise<void> {
     const oneshotFolder: string | null = await getOneshotFolder();
+
     if (oneshotFolder == null) {
         return;
     }
@@ -72,11 +99,13 @@ export async function setupOneshotFilesPaths(): Promise<void> {
     oneshotFilePaths = getAllFiles(oneshotFolder);
 }
 
+// update every 100 ms called from the renderer process
 export async function updateEvery100ms(): Promise<void> {
     if (await isSettingsFileExist()) {            
         await setupModConfigs();
     }
 
+    // check if oneshot is running and set oneshotIsRunning variable accordingly
     switch (os.platform()) {
         case 'win32': {
             exec("tasklist | findstr oneshot", (error, stdout) => {
@@ -106,6 +135,7 @@ export async function updateEvery100ms(): Promise<void> {
     }
 }
 
+// the os file selector with extension of zip and return the path of the selected file
 export async function importMod(): Promise<string | null> {
     const modFile = await dialog.showOpenDialog({
         filters: [
@@ -154,9 +184,7 @@ export async function readSettingsFile(): Promise<string> {
 }
 
 export async function getOneshotFolder(): Promise<string | null> {
-    const isFileExist = await isSettingsFileExist();
-
-    if (isFileExist) {
+    if (await isSettingsFileExist()) {
         const settings: string = await readSettingsFile();
         const settingsJson: SettingsData = JSON.parse(settings);
 
@@ -175,23 +203,21 @@ export async function getOneshotFolder(): Promise<string | null> {
     }
 }
 
+// open the os folder selector
 export async function openOneshotFolderSelector(): Promise<OpenDialogReturnValue> {
     return await dialog.showOpenDialog({ properties: ['openDirectory'] });
 }
 
 export async function isFolderOneshotDir(dirPath: string): Promise<boolean> {
-    const foldersAndFilesInDirPath: string[] = [];
-
     let checkCount: number = 0;
 
     if (dirPath.trim() == "") {
         return false;
     }
 
-    fs.readdirSync(dirPath).forEach(file => {
-        foldersAndFilesInDirPath.push(file);
-    });
+    const foldersAndFilesInDirPath: string[] = fs.readdirSync(dirPath);
 
+    // check all the oneshotDirFilter strings if it's in each of foldersAndFilesInDirPath
     for (const folderOrFileName of oneshotDirFilter) {
         for (const folderOrFileNameInDirPath of foldersAndFilesInDirPath) {
             if (folderOrFileNameInDirPath.includes(folderOrFileName)) {
@@ -201,31 +227,31 @@ export async function isFolderOneshotDir(dirPath: string): Promise<boolean> {
         }
     }
 
+    // if all of oneshotDirFilter strings is in dirPath then it's oneshot directory
     return checkCount == oneshotDirFilter.length;
 }
 
 export async function isFolderOneshotMod(dirPath: string): Promise<boolean> {
-    let checkCount: number = 0;
-
     if (dirPath.trim() == "") {
         return false;
     }
 
     const foldersAndFilesInDirPath: string[] = fs.readdirSync(dirPath);
     
+    // check all the oneshotModFilter strings if it's in each of foldersAndFilesInDirPath
     for (const folderOrFileName of oneshotModFilter) {
         for (const folderOrFileNameInDirPath of foldersAndFilesInDirPath) {
             
             if (folderOrFileNameInDirPath.includes(folderOrFileName)) {
-                checkCount++;
-                break;
+                return true;
             }
         }
     }
 
-    return checkCount != 0;
+    return false;
 }
 
+// open the file manager to the directory of the folder
 export async function openFolderInFileManager(folderPath: string): Promise<void> {
     shell.openPath(folderPath);
 }
@@ -234,9 +260,11 @@ export async function getModConfigs(): Promise<Map<string, ModData>> {
     return modConfigs;
 }
 
+// set mod "enabled" property
 export async function setModEnabled(key: string, enabled: boolean): Promise<void> {
     const modConfig: ModData | undefined = modConfigs.get(key);
 
+    // check if the mod config exist
     if (modConfig) {
         modConfig.enabled = enabled;
         modConfigs.set(key, modConfig);
@@ -254,45 +282,75 @@ export async function setModConfig(key: string, config: ModData): Promise<void> 
 }
 
 export async function deleteMod(modPath: string): Promise<void> {
+    // fail safe, check if modPath is empty string
     if (modPath.trim() === "") {
+        console.error("Error: modPath is empty")
         return;
     }
+
+    const oneshotPath: string | null = await getOneshotFolder();
     
+    // fail safe
+    if (oneshotPath == null) {
+        console.error("Error: Oneshot path is null")
+        return;
+    }
+
+    // fail safe, check if modPath is in oneshot mod path
+    if (!modPath.includes(`${oneshotPath}${getPathSeparator()}Mods`)) {
+        console.error("Error: It's not a mod path!")
+        return;
+    }
+
+    // i'm scared of this
+    // should be fine though so many fail safe in place
     fs.rmSync(modPath, { recursive: true, force: true });
     modConfigs.delete(modPath);
 }
 
+// load the mod configurations
 export async function setupModConfigs(): Promise<void> {
     const oneshotFolder: string | null = await getOneshotFolder();
+
     if (oneshotFolder == null) {
+        console.error("Error: Oneshot path is null")
         return;
     }
 
     const modDirectory: string = path.join(`${oneshotFolder}`, "Mods");
 
+    // if the mod directory doesn't exist then create it
+    // and just exist knowing that this is the first time the user runs the app 
+    // so no need to find the mod configs
     if (!fs.existsSync(modDirectory)) {
         fs.mkdirSync(modDirectory);
+        return;
     }
 
+    // read the enable config in the settings
     const settings: SettingsData = JSON.parse(await readSettingsFile());
-
     const modEnabledConfigs: EnableData[] = settings.modEnabledConfigs;
 
     fs.readdirSync(modDirectory).forEach(modFolder => {
+
+        // construct the full mod path
         const individualModPath: string = path.join(`${modDirectory}`, `${modFolder}`);
 
+        // ignore files because we are searching for mod directories
         if (!fs.lstatSync(individualModPath).isDirectory()) {
             return;
         }
 
         let isModConfigExist: boolean = false;
 
+        // filter the mod enable configs for this spesific mod
         const enableData = modEnabledConfigs.filter(modEnabledConfig => {
             return modEnabledConfig.key === individualModPath
         })
 
         fs.readdirSync(individualModPath).forEach(modContentName => {
             if (modContentName == 'mod_config.json') {
+                // read mod_config.json in the mod directory
                 const modConfigJSON: ModDataJSON = JSON.parse(fs.readFileSync(path.join(`${individualModPath}`, "mod_config.json"), 'utf8'));
                 const modIcon = fs.readFileSync(path.join(`${individualModPath}`, `${modConfigJSON.iconPath}`));
                 
@@ -309,6 +367,7 @@ export async function setupModConfigs(): Promise<void> {
             }
         });
 
+        // if there is no mod configuration in the mod folder then fill the rest of the mod config with null
         if (!isModConfigExist) {
             modConfigs.set(individualModPath, {
                 modPath: individualModPath,

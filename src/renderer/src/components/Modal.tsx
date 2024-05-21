@@ -19,6 +19,7 @@ export default function Modal({ haveCloseButton, canClose, className, openModal,
     const ref = useRef<HTMLDialogElement>(null);
     const allowDialogDismiss: boolean = false;
     
+    // change the reference state
     useEffect(() => {
         if (openModal) {
             ref.current?.showModal();
