@@ -60,7 +60,7 @@ export async function runOneshot(): Promise<void> {
         }
 
         const oneshotFilePath: string = path.join((await getOneshotFolder())!, ...modPathRelativeSplitted.slice(2));
-        const modFilePath: string = path.join((await getOneshotFolder())!, ...modPathRelativeSplitted);
+        const modFilePath: string = path.join( (await getOneshotFolder())!, ...modPathRelativeSplitted);
 
         if (allModPathList[i].includes(".rxdata")) {
             const modifiedRXData = Marshal.dump(applyModificationRXDataExcludeScripts(oneshotFilePath, modFilePath));
@@ -73,41 +73,42 @@ export async function runOneshot(): Promise<void> {
             //     break;
             // }
 
+            if (oneshotFilePath === "/home/annas/.steam/steam/steamapps/common/OneShot/Data/Map020.rxdata") {
+                console.log("break")
+            }
+
+            console.log(`Modifiying ${oneshotFilePath}`);
             // safe the modified file to the oneshot rxdata
             fs.writeFileSync(oneshotFilePath, modifiedRXData);
             
-            console.log(`Modifiying ${oneshotFilePath} to ${modifiedRXData}`);
         } else {
             if (fs.existsSync(oneshotFilePath)) {
-                fs.cpSync(modFilePath, oneshotFilePath, { recursive: true });
-
-                console.log(`Copying ${modFilePath} to ${oneshotFilePath}`);
+                console.log(`Exist copying ${modFilePath} to ${oneshotFilePath}`);
+                fs.copyFileSync(modFilePath, path.join(getPathSeparator(), oneshotFilePath));
             } else {
                 const oneshotTargetPath: string[] = oneshotFilePath.split(getPathSeparator())
-                oneshotTargetPath.pop();
 
                 filePathListToRemoveToRestoreOneshot.push(oneshotFilePath);
 
-                fs.cpSync(modFilePath, path.join(...oneshotTargetPath), { recursive: true });
-
-                console.log(`Copying ${modFilePath} to ${path.join(...oneshotTargetPath)}`);
+                console.log(`Doesn't exist copying ${modFilePath} to ${path.join(...oneshotTargetPath)}`);
+                fs.copyFileSync(modFilePath, path.join(getPathSeparator(), ...oneshotTargetPath));
             }
         }
     }
 
-    switch (os.platform()) {
-        case 'win32': {
-            spawn('explorer', ['steam://rungameid/420530']);
-            break;
-        }
-        case 'linux': {
-            spawn('xdg-open', ['steam://rungameid/420530'])
-            break;
-        }
-        default: {
-            throw new Error('Unsupported platform')
-        }
-    }
+    // switch (os.platform()) {
+    //     case 'win32': {
+    //         spawn('explorer', ['steam://rungameid/420530']);
+    //         break;
+    //     }
+    //     case 'linux': {
+    //         spawn('xdg-open', ['steam://rungameid/420530'])
+    //         break;
+    //     }
+    //     default: {
+    //         throw new Error('Unsupported platform')
+    //     }
+    // }
 }
 
 function applyModificationRXDataExcludeScripts(fileToModifyPath: string, fileThatModifyItPath: string): MarshalObject {
