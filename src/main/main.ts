@@ -34,6 +34,7 @@ export async function runOneshot(): Promise<void> {
 
     const [pathListFull, pathListRelative] = await getOneshotFilesThatTheModIsTryingToModify();
     const allModPathList: string[] = []
+    const pathDestination = path.join(app.getPath('userData'), 'OneshotTemp');
 
     for (const modConfig of modConfigs) {
         if (modConfig[1].enabled) {
