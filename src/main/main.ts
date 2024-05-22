@@ -58,7 +58,7 @@ export async function runOneshot(): Promise<void> {
         while (modPathRelativeSplitted[0] != "Mods") {
             modPathRelativeSplitted.shift();
         }
-        
+
         const oneshotFilePath: string = path.join((await getOneshotFolder())!, ...modPathRelativeSplitted.slice(2));
         const modFilePath: string = path.join((await getOneshotFolder())!, ...modPathRelativeSplitted);
 
@@ -95,19 +95,19 @@ export async function runOneshot(): Promise<void> {
         }
     }
 
-    // switch (os.platform()) {
-    //     case 'win32': {
-    //         spawn('explorer', ['steam://rungameid/420530']);
-    //         break;
-    //     }
-    //     case 'linux': {
-    //         spawn('xdg-open', ['steam://rungameid/420530'])
-    //         break;
-    //     }
-    //     default: {
-    //         throw new Error('Unsupported platform')
-    //     }
-    // }
+    switch (os.platform()) {
+        case 'win32': {
+            spawn('explorer', ['steam://rungameid/420530']);
+            break;
+        }
+        case 'linux': {
+            spawn('xdg-open', ['steam://rungameid/420530'])
+            break;
+        }
+        default: {
+            throw new Error('Unsupported platform')
+        }
+    }
 }
 
 function applyModificationRXDataExcludeScripts(fileToModifyPath: string, fileThatModifyItPath: string): MarshalObject {
