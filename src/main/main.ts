@@ -6,7 +6,7 @@ import os from 'os'
 import { OpenDialogReturnValue, app, dialog } from "electron"
 import fs, { mkdir } from 'fs';
 import path from "path";
-import { EnableData, ModData, ModDataJSON, SettingsData } from "../renderer/src/utils/interfaces";
+import { EnableData, ModData, ModDataJSON, ReplaceRestoreData, SettingsData } from "../renderer/src/utils/interfaces";
 import { shell } from 'electron';
 import { getAllFiles, getPathSeparator } from "./utils";
 import { Marshal, MarshalObject } from "ts-marshal";
@@ -20,18 +20,20 @@ import extract from 'extract-zip';
 const modConfigs: Map<string, ModData> = new Map<string, ModData>();
 const oneshotDirFilter: string[] = ["Audio", "Data", "Fonts", "Graphics", "Languages", "Wallpaper", "steamshim", "oneshot"];
 const oneshotModFilter: string[] = ["Audio", "Data", "Fonts", "Graphics", "Languages", "Wallpaper", "oneshot"];
-const textEncoder = new TextEncoder();
-const textDecoder = new TextDecoder();
 
+let filePathListToRemoveToRestoreOneshot: string[] = [];
+let filePathListToReplaceToRestoreOneshot: ReplaceRestoreData[]  = [];
 let oneshotIsRunning: boolean = false;
 let allOneshotFilesPathTrimmed: string[] = [];
+let oneshotRunningChanged: boolean = false;
 
 
 export async function runOneshot(): Promise<void> {
-    const pathDestination: string = path.join(app.getPath('userData'), 'OneshotTemp')
+    filePathListToRemoveToRestoreOneshot = [];
+    filePathListToReplaceToRestoreOneshot  = [];
+
     const [pathListFull, pathListRelative] = await getOneshotFilesThatTheModIsTryingToModify();
     const allModPathList: string[] = []
-    const filePathListToRemoveToRestoreOneshot: string[] = [];
 
     for (const modConfig of modConfigs) {
         if (modConfig[1].enabled) {
@@ -39,18 +41,31 @@ export async function runOneshot(): Promise<void> {
         }
     }
 
+    // remove mod_config.json
+    allModPathList.filter((value) => {
+        !value.includes("mod_config.json")
+    })
+
     if (!fs.existsSync(pathDestination)) {
         fs.mkdirSync(pathDestination);
     }
 
     // copy the oneshot files that the mod is trying to modify so it can be restored later
     for (let i = 0; i < pathListFull.length; i++) {
-        fs.cpSync(pathListFull[i], path.join(pathDestination, pathListRelative[i]), { recursive: true });
+        const oneshotFilePath: string = pathListFull[i];
+        const tempFilePath: string = path.join(pathDestination, pathListRelative[i]);
+
+        fs.cpSync(oneshotFilePath, tempFilePath, { recursive: true });
+        
+        filePathListToReplaceToRestoreOneshot.push({
+            oneshotFilePath: oneshotFilePath,
+            tempFilePath: tempFilePath
+        })
     }
 
 
     // time to do funny thing to twm
-    for (let i = allModPathList.length - 1; i >= 0; i--) {
+    for (let i = 0; i < allModPathList.length; i++) {
         //split the mod path into array ex ["M:", "SteamLibrary", "steamapps", "common","Oneshot", "Mods", "mod name", "Data", "Map091.rxdata"]
         const modPathRelativeSplitted: string[] = allModPathList[i].split(getPathSeparator());
 
@@ -60,55 +75,113 @@ export async function runOneshot(): Promise<void> {
         }
 
         const oneshotFilePath: string = path.join((await getOneshotFolder())!, ...modPathRelativeSplitted.slice(2));
-        const modFilePath: string = path.join( (await getOneshotFolder())!, ...modPathRelativeSplitted);
+        const modFilePath: string = path.join((await getOneshotFolder())!, ...modPathRelativeSplitted);
 
         if (allModPathList[i].includes(".rxdata")) {
-            const modifiedRXData = Marshal.dump(applyModificationRXDataExcludeScripts(oneshotFilePath, modFilePath));
+            try {
+                if (!allModPathList[i].includes("Scripts.rxdata")) {
+                    // const modifiedRXData = applyModificationRXDataExcludeScripts(oneshotFilePath, modFilePath);
 
-            // if (!allModPathList[i].includes("Scripts.rxdata")) {
-            //     // modify the shit out of oneshot .rxdata file that is not Scripts.rxdata with its corresponding mod .rxdata file 
-            //     modifiedRXData = Marshal.dump(applyModificationRXDataExcludeScripts(oneshotFilePath, modFilePath));
-            // } else {
-            //     modifyRXDataScripts(oneshotFilePath, modFilePath)
-            //     break;
-            // }
+                    // fs.writeFileSync(oneshotFilePath, Marshal.dump(modifiedRXData));
+                    // console.log(`Modified ${oneshotFilePath}`)
 
-            if (oneshotFilePath === "/home/annas/.steam/steam/steamapps/common/OneShot/Data/Map020.rxdata") {
-                console.log("break")
+                    fs.copyFileSync(modFilePath, oneshotFilePath)
+                } else {
+                    fs.copyFileSync(modFilePath, oneshotFilePath)
+
+                    // modifyRXDataScripts(oneshotFilePath, modFilePath)
+                    // break;
+                };
+            } catch (error) {
+                console.log(`Failed to modify ${oneshotFilePath}`);
             }
 
-            console.log(`Modifiying ${oneshotFilePath}`);
-            // safe the modified file to the oneshot rxdata
-            fs.writeFileSync(oneshotFilePath, modifiedRXData);
-            
         } else {
             if (fs.existsSync(oneshotFilePath)) {
-                console.log(`Exist copying ${modFilePath} to ${oneshotFilePath}`);
                 fs.copyFileSync(modFilePath, os.platform() == "win32" ? oneshotFilePath : path.join(getPathSeparator(), oneshotFilePath));
+                console.log(`Copied ${modFilePath} to ${oneshotFilePath}`);
             } else {
                 const oneshotTargetPath: string[] = oneshotFilePath.split(getPathSeparator())
 
                 filePathListToRemoveToRestoreOneshot.push(oneshotFilePath);
 
-                console.log(`Doesn't exist copying ${modFilePath} to ${path.join(...oneshotTargetPath)}`);
                 fs.copyFileSync(modFilePath, os.platform() == "win32" ? path.join(...oneshotTargetPath) : path.join(getPathSeparator(), ...oneshotTargetPath));
+                console.log(`Copied ${modFilePath} to ${path.join(...oneshotTargetPath)}`);
             }
         }
     }
 
-    // switch (os.platform()) {
-    //     case 'win32': {
-    //         spawn('explorer', ['steam://rungameid/420530']);
-    //         break;
-    //     }
-    //     case 'linux': {
-    //         spawn('xdg-open', ['steam://rungameid/420530'])
-    //         break;
-    //     }
-    //     default: {
-    //         throw new Error('Unsupported platform')
-    //     }
-    // }
+    switch (os.platform()) {
+        case 'win32': {
+            spawn('explorer', ['steam://rungameid/420530']);
+            break;
+        }
+        case 'linux': {
+            spawn('xdg-open', ['steam://rungameid/420530'])
+            break;
+        }
+        default: {
+            throw new Error('Unsupported platform')
+        }
+    }
+
+}
+
+// update every 100 ms called from the renderer process
+export async function updateEvery100ms(): Promise<void> {
+    if (await isSettingsFileExist()) {
+        await setupModConfigs();
+    }
+
+    // check if oneshot is running and set oneshotIsRunning variable accordingly
+    switch (os.platform()) {
+        case 'win32': {
+            exec("tasklist | findstr oneshot", (error, stdout) => {
+                if (error) {
+                    oneshotIsRunning = false;
+                    return;
+                }
+
+                oneshotIsRunning = stdout.includes("oneshot");
+            });
+            break;
+        }
+        case 'linux': {
+            exec("pgrep -fl 'oneshot'", (error, stdout, stderr) => {
+                if (error) {
+                    console.log(stderr);
+                    console.error('Error executing ps command:', error);
+                }
+
+                oneshotIsRunning = stdout.includes("oneshot");
+            });
+            break;
+        }
+        default: {
+            throw new Error('Unsupported platform')
+        }
+    }
+
+    if (oneshotRunningChanged != oneshotIsRunning) {
+        if (!oneshotIsRunning) {
+            for(const filePathToReplaceToRestoreOneshot of filePathListToReplaceToRestoreOneshot) {
+                fs.copyFileSync(filePathToReplaceToRestoreOneshot.tempFilePath, filePathToReplaceToRestoreOneshot.oneshotFilePath)
+            }
+
+            const tempOneshotPathToDelete = path.join(app.getPath('userData'), 'OneshotTemp');
+
+            if (tempOneshotPathToDelete !== "") {
+                fs.rmSync(tempOneshotPathToDelete, { recursive: true }); // >~<
+            }
+
+            for(const filePathToRemoveToRestoreOneshot of filePathListToRemoveToRestoreOneshot) {
+                fs.unlinkSync(filePathToRemoveToRestoreOneshot);
+            }
+            
+        }
+
+        oneshotRunningChanged = oneshotIsRunning;
+    }
 }
 
 function applyModificationRXDataExcludeScripts(fileToModifyPath: string, fileThatModifyItPath: string): MarshalObject {
@@ -240,42 +313,6 @@ export async function setupOneshotFilesPaths(): Promise<void> {
     }
 
     allOneshotFilesPathTrimmed = trimAllPathToBeRelative(getAllFiles(oneshotFolder), oneshotFolder);
-}
-
-// update every 100 ms called from the renderer process
-export async function updateEvery100ms(): Promise<void> {
-    if (await isSettingsFileExist()) {
-        await setupModConfigs();
-    }
-
-    // check if oneshot is running and set oneshotIsRunning variable accordingly
-    switch (os.platform()) {
-        case 'win32': {
-            exec("tasklist | findstr oneshot", (error, stdout) => {
-                if (error) {
-                    oneshotIsRunning = false;
-                    return;
-                }
-
-                oneshotIsRunning = stdout.includes("oneshot");
-            });
-            break;
-        }
-        case 'linux': {
-            exec("pgrep -fl 'oneshot'", (error, stdout, stderr) => {
-                if (error) {
-                    console.log(stderr);
-                    console.error('Error executing ps command:', error);
-                }
-
-                oneshotIsRunning = stdout.includes("oneshot");
-            });
-            break;
-        }
-        default: {
-            throw new Error('Unsupported platform')
-        }
-    }
 }
 
 // the os file selector with extension of zip and return the path of the selected file

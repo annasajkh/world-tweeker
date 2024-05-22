@@ -25,3 +25,8 @@ export interface ModDataJSON {
     iconPath: string;
     author: string;
 }
+
+export interface ReplaceRestoreData {
+    oneshotFilePath: string;
+    tempFilePath: string;
+}
