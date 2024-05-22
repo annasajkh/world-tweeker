@@ -48,6 +48,7 @@ export async function runOneshot(): Promise<void> {
     })
 
     if (!fs.existsSync(pathDestination)) {
+        console.log(`Making OneshotTemp ${pathDestination}`)
         fs.mkdirSync(pathDestination);
     }
 
@@ -93,21 +94,23 @@ export async function runOneshot(): Promise<void> {
                     // modifyRXDataScripts(oneshotFilePath, modFilePath)
                     // break;
                 };
+                
+                console.log(`Replacing ${oneshotFilePath} with ${modFilePath}`);
             } catch (error) {
                 console.log(`Failed to modify ${oneshotFilePath}`);
             }
 
         } else {
             if (fs.existsSync(oneshotFilePath)) {
+                console.log(`Replacing ${oneshotFilePath} with ${modFilePath}`);
                 fs.copyFileSync(modFilePath, os.platform() == "win32" ? oneshotFilePath : path.join(getPathSeparator(), oneshotFilePath));
-                console.log(`Copied ${modFilePath} to ${oneshotFilePath}`);
             } else {
                 const oneshotTargetPath: string[] = oneshotFilePath.split(getPathSeparator())
 
                 filePathListToRemoveToRestoreOneshot.push(oneshotFilePath);
 
+                console.log(`Copying ${modFilePath} to ${path.join(...oneshotTargetPath)}`);
                 fs.copyFileSync(modFilePath, os.platform() == "win32" ? path.join(...oneshotTargetPath) : path.join(getPathSeparator(), ...oneshotTargetPath));
-                console.log(`Copied ${modFilePath} to ${path.join(...oneshotTargetPath)}`);
             }
         }
     }
@@ -165,20 +168,26 @@ export async function updateEvery100ms(): Promise<void> {
 
     if (oneshotRunningChanged != oneshotIsRunning) {
         if (!oneshotIsRunning) {
+            console.log("Oneshot is closed");
             for(const filePathToReplaceToRestoreOneshot of filePathListToReplaceToRestoreOneshot) {
+                console.log(`Replacing ${filePathToReplaceToRestoreOneshot.oneshotFilePath} with ${filePathToReplaceToRestoreOneshot.tempFilePath}`);
                 fs.copyFileSync(filePathToReplaceToRestoreOneshot.tempFilePath, filePathToReplaceToRestoreOneshot.oneshotFilePath)
             }
 
             const tempOneshotPathToDelete = path.join(app.getPath('userData'), 'OneshotTemp');
 
             if (tempOneshotPathToDelete !== "") {
+                console.log(`Deleting OneshotTemp ${tempOneshotPathToDelete}`)
                 fs.rmSync(tempOneshotPathToDelete, { recursive: true }); // >~<
             }
 
             for(const filePathToRemoveToRestoreOneshot of filePathListToRemoveToRestoreOneshot) {
+                console.log(`Deleting ${filePathToRemoveToRestoreOneshot}`)
                 fs.unlinkSync(filePathToRemoveToRestoreOneshot);
             }
             
+        } else {
+            console.log("Oneshot is running");
         }
 
         oneshotRunningChanged = oneshotIsRunning;
