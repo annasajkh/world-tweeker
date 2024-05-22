@@ -24,6 +24,7 @@ export function getPathSeparator(): string {
     return separator;
 }
 
+
 // get all the files of a directory recursively
 export function getAllFiles(pathDir: string): string[] {
     const result: string[] = [];

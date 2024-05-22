@@ -84,14 +84,14 @@ export async function runOneshot(): Promise<void> {
         } else {
             if (fs.existsSync(oneshotFilePath)) {
                 console.log(`Exist copying ${modFilePath} to ${oneshotFilePath}`);
-                fs.copyFileSync(modFilePath, path.join(getPathSeparator(), oneshotFilePath));
+                fs.copyFileSync(modFilePath, os.platform() == "win32" ? oneshotFilePath : path.join(getPathSeparator(), oneshotFilePath));
             } else {
                 const oneshotTargetPath: string[] = oneshotFilePath.split(getPathSeparator())
 
                 filePathListToRemoveToRestoreOneshot.push(oneshotFilePath);
 
                 console.log(`Doesn't exist copying ${modFilePath} to ${path.join(...oneshotTargetPath)}`);
-                fs.copyFileSync(modFilePath, path.join(getPathSeparator(), ...oneshotTargetPath));
+                fs.copyFileSync(modFilePath, os.platform() == "win32" ? path.join(...oneshotTargetPath) : path.join(getPathSeparator(), ...oneshotTargetPath));
             }
         }
     }
