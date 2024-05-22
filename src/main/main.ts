@@ -9,13 +9,19 @@ import path from "path";
 import { EnableData, ModData, ModDataJSON, SettingsData } from "../renderer/src/utils/interfaces";
 import { shell } from 'electron';
 import { getAllFiles, getPathSeparator } from "./utils";
-import { Marshal } from "ts-marshal";
+import { Marshal, MarshalObject } from "ts-marshal";
+import { diff } from 'just-diff';
+import { diffApply } from 'just-diff-apply';
+import pako from 'pako';
 
-const extract = require('extract-zip');
+
+import extract from 'extract-zip';
 
 const modConfigs: Map<string, ModData> = new Map<string, ModData>();
 const oneshotDirFilter: string[] = ["Audio", "Data", "Fonts", "Graphics", "Languages", "Wallpaper", "steamshim", "oneshot"];
 const oneshotModFilter: string[] = ["Audio", "Data", "Fonts", "Graphics", "Languages", "Wallpaper", "oneshot"];
+const textEncoder = new TextEncoder();
+const textDecoder = new TextDecoder();
 
 let oneshotIsRunning: boolean = false;
 let allOneshotFilesPathTrimmed: string[] = [];
@@ -23,24 +29,72 @@ let allOneshotFilesPathTrimmed: string[] = [];
 
 export async function runOneshot(): Promise<void> {
     const pathDestination: string = path.join(app.getPath('userData'), 'OneshotTemp')
-    const [pathListFull, pathListRelative, allModFilesFiltered] = await getOneshotFilesThatTheModIsTryingToModify();
+    const [pathListFull, pathListRelative] = await getOneshotFilesThatTheModIsTryingToModify();
+    const allModPathList: string[] = []
+    const filePathListToRemoveToRestoreOneshot: string[] = [];
 
-    
-    // if (!fs.existsSync(pathDestination)) {
-    //     fs.mkdirSync(pathDestination);
-    // }
-
-    // // copy the oneshot files that the mod is trying to modify
-    // for (let i = 0; i < pathListFull.length; i++) {
-    //     recursivelyCreateFolderPath(pathDestination, pathListRelative[i])
-    //     fs.copyFileSync(pathListFull[i], path.join(pathDestination, pathListRelative[i]));   
-    // }
-
-    for(let i = 0; i < pathListFull.length; i++) {
-        applyModificationRXDataExcludeScripts(path.join((await getOneshotFolder())!, pathListRelative[i]), allModFilesFiltered[i]);
-        break;
+    for (const modConfig of modConfigs) {
+        if (modConfig[1].enabled) {
+            allModPathList.push(...getAllFiles(modConfig[0]));
+        }
     }
-    
+
+    if (!fs.existsSync(pathDestination)) {
+        fs.mkdirSync(pathDestination);
+    }
+
+    // copy the oneshot files that the mod is trying to modify so it can be restored later
+    for (let i = 0; i < pathListFull.length; i++) {
+        fs.cpSync(pathListFull[i], path.join(pathDestination, pathListRelative[i]), { recursive: true });
+    }
+
+
+    // time to do funny thing to twm
+    for (let i = allModPathList.length - 1; i >= 0; i--) {
+        //split the mod path into array ex ["M:", "SteamLibrary", "steamapps", "common","Oneshot", "Mods", "mod name", "Data", "Map091.rxdata"]
+        const modPathRelativeSplitted: string[] = allModPathList[i].split(getPathSeparator());
+
+        // continously chop the front until we get the relative path ex ["Mods", "mod name", "Data", "Map091.rxdata"]
+        while (modPathRelativeSplitted[0] != "Mods") {
+            modPathRelativeSplitted.shift();
+        }
+        
+        const oneshotFilePath: string = path.join((await getOneshotFolder())!, ...modPathRelativeSplitted.slice(2));
+        const modFilePath: string = path.join((await getOneshotFolder())!, ...modPathRelativeSplitted);
+
+        if (allModPathList[i].includes(".rxdata")) {
+            const modifiedRXData = Marshal.dump(applyModificationRXDataExcludeScripts(oneshotFilePath, modFilePath));
+
+            // if (!allModPathList[i].includes("Scripts.rxdata")) {
+            //     // modify the shit out of oneshot .rxdata file that is not Scripts.rxdata with its corresponding mod .rxdata file 
+            //     modifiedRXData = Marshal.dump(applyModificationRXDataExcludeScripts(oneshotFilePath, modFilePath));
+            // } else {
+            //     modifyRXDataScripts(oneshotFilePath, modFilePath)
+            //     break;
+            // }
+
+            // safe the modified file to the oneshot rxdata
+            fs.writeFileSync(oneshotFilePath, modifiedRXData);
+            
+            console.log(`Modifiying ${oneshotFilePath} to ${modifiedRXData}`);
+        } else {
+            if (fs.existsSync(oneshotFilePath)) {
+                fs.cpSync(modFilePath, oneshotFilePath, { recursive: true });
+
+                console.log(`Copying ${modFilePath} to ${oneshotFilePath}`);
+            } else {
+                const oneshotTargetPath: string[] = oneshotFilePath.split(getPathSeparator())
+                oneshotTargetPath.pop();
+
+                filePathListToRemoveToRestoreOneshot.push(oneshotFilePath);
+
+                fs.cpSync(modFilePath, path.join(...oneshotTargetPath), { recursive: true });
+
+                console.log(`Copying ${modFilePath} to ${path.join(...oneshotTargetPath)}`);
+            }
+        }
+    }
+
     // switch (os.platform()) {
     //     case 'win32': {
     //         spawn('explorer', ['steam://rungameid/420530']);
@@ -56,40 +110,65 @@ export async function runOneshot(): Promise<void> {
     // }
 }
 
-function applyModificationRXDataExcludeScripts(fileToModifyPath: string, fileThatModifyItPath: string): void {
-    // const fileToModify = Marshal.load(fs.readFileSync(fileToModifyPath));
-    // const fileThatModifyIt = Marshal.load(fs.readFileSync(fileThatModifyItPath));
+function applyModificationRXDataExcludeScripts(fileToModifyPath: string, fileThatModifyItPath: string): MarshalObject {
+    const fileToModify: any = Marshal.load(fs.readFileSync(fileToModifyPath));
+    const fileThatModifyIt: any = Marshal.load(fs.readFileSync(fileThatModifyItPath));
 
-    console.log(fileToModifyPath);
-    // console.log(fileToModify);
-
-    console.log(fileThatModifyItPath);
-    // console.log(fileThatModifyIt);
-
-}
-
-
-function recursivelyCreateFolderPath(startingPath: string, relativePathToCreate: string): void {
-    let pathBridge = startingPath;
-    const folderNameList: string[] = relativePathToCreate.split(getPathSeparator());
-
-    folderNameList.pop();
-
-    for (const folderName of folderNameList) {
-        pathBridge = path.join(pathBridge, folderName);
-
-        if (!fs.existsSync(pathBridge)) {
-            fs.mkdirSync(pathBridge);
-        }
+    if (fileToModify == null) {
+        throw new Error("Error: fileToModify is null");
+    } else if (fileThatModifyIt == null) {
+        throw new Error("Error: fileThatModifyIt is null");
     }
+
+    diffApply(fileToModify, diff(fileToModify, fileThatModifyIt));
+
+    return fileToModify;
+}
+
+function modifyRXDataScripts(fileToModifyPath: string, fileThatModifyItPath: string) {
+    const fileToModify: any = Marshal.load(fs.readFileSync(fileToModifyPath));
+    const fileThatModifyIt: any = Marshal.load(fs.readFileSync(fileThatModifyItPath));
+
+    if (fileToModify == null) {
+        throw new Error("Error: fileToModify is null");
+    } else if (fileThatModifyIt == null) {
+        throw new Error("Error: fileThatModifyIt is null");
+    }
+
+    // decompress the scripts that is compressed using zlib
+    for (let i = 0; i < fileToModify.length; i++) {
+        // fileToModify[i][2] = textDecoder.decode(pako.deflate(textEncoder.encode(fileToModify[i][2])))
+
+        console.log(fileToModify[i][2])
+
+        break
+    }
+
+    console.log(fileToModify);
+
+    console.log(diff(fileToModify, fileThatModifyIt));
 }
 
 
-async function getOneshotFilesThatTheModIsTryingToModify(): Promise<[string[], string[], string[]]> {
+// function recursivelyCreateFolderPath(startingPath: string, relativePathToCreate: string): void {
+//     let pathBridge = startingPath;
+//     const folderNameList: string[] = relativePathToCreate.split(getPathSeparator());
+
+//     folderNameList.pop();
+
+//     for (const folderName of folderNameList) {
+//         pathBridge = path.join(pathBridge, folderName);
+
+//         if (!fs.existsSync(pathBridge)) {
+//             fs.mkdirSync(pathBridge);
+//         }
+//     }
+// }
+
+
+async function getOneshotFilesThatTheModIsTryingToModify(): Promise<[string[], string[]]> {
     const fullPathList: string[] = [];
     const relativePathList: string[] = [];
-    const allModPathList: string[] = [];
-    const modPathListFiltered: string[] = [];
     const allModFilesPathTrimmed: string[] = [];
 
     // get all the mod files of the mod that is enable and trim it
@@ -98,7 +177,6 @@ async function getOneshotFilesThatTheModIsTryingToModify(): Promise<[string[], s
             const allModFiles = getAllFiles(modConfig[1].modPath);
 
             allModFilesPathTrimmed.push(...trimAllPathToBeRelative(allModFiles, modConfig[1].modPath));
-            allModPathList.push(...allModFiles);
         }
     }
 
@@ -116,8 +194,8 @@ async function getOneshotFilesThatTheModIsTryingToModify(): Promise<[string[], s
     //         modPathListFiltered.push(allModPathList[i])
     //     }
     // }
-    
-    return [fullPathList, relativePathList, modPathListFiltered];
+
+    return [fullPathList, relativePathList];
 }
 
 function trimAllPathToBeRelative(paths: string[], pathToRemove: string): string[] {
@@ -125,7 +203,7 @@ function trimAllPathToBeRelative(paths: string[], pathToRemove: string): string[
     return paths.map((path: string) => path.replace(pathToRemove, "").replace(getPathSeparator(), "").trim());
 }
 
-export async function isModHaveConflict(modPath: string): Promise<boolean> {    
+export async function isModHaveConflict(modPath: string): Promise<boolean> {
     const modRelativeFilePaths = trimAllPathToBeRelative(getAllFiles(modPath), modPath);
 
     for (const otherModConfig of modConfigs) {
@@ -159,13 +237,13 @@ export async function setupOneshotFilesPaths(): Promise<void> {
     if (oneshotFolder == null) {
         return;
     }
-    
+
     allOneshotFilesPathTrimmed = trimAllPathToBeRelative(getAllFiles(oneshotFolder), oneshotFolder);
 }
 
 // update every 100 ms called from the renderer process
 export async function updateEvery100ms(): Promise<void> {
-    if (await isSettingsFileExist()) {            
+    if (await isSettingsFileExist()) {
         await setupModConfigs();
     }
 
@@ -216,7 +294,7 @@ export async function importMod(): Promise<string | null> {
 }
 
 export async function extractMod(modFilePath: string): Promise<string> {
-    const extractDestination: string = path.join(`${await getOneshotFolder()}`, "Mods",  modFilePath.split(getPathSeparator()).at(-1)!.split(".")[0]);
+    const extractDestination: string = path.join(`${await getOneshotFolder()}`, "Mods", modFilePath.split(getPathSeparator()).at(-1)!.split(".")[0]);
 
     await extract(modFilePath, { dir: extractDestination }, (error): void => {
         console.error(error);
@@ -301,7 +379,7 @@ export async function isFolderOneshotMod(dirPath: string): Promise<boolean> {
     }
 
     const foldersAndFilesInDirPath: string[] = fs.readdirSync(dirPath);
-    
+
     // check all the oneshotModFilter strings if it's in each of foldersAndFilesInDirPath
     for (const folderOrFileName of oneshotModFilter) {
         for (const folderOrFileNameInDirPath of foldersAndFilesInDirPath) {
@@ -352,7 +430,7 @@ export async function deleteMod(modPath: string): Promise<void> {
     }
 
     const oneshotPath: string | null = await getOneshotFolder();
-    
+
     // fail safe
     if (oneshotPath == null) {
         console.error("Error: Oneshot path is null")
@@ -416,7 +494,7 @@ export async function setupModConfigs(): Promise<void> {
                 // read mod_config.json in the mod directory
                 const modConfigJSON: ModDataJSON = JSON.parse(fs.readFileSync(path.join(`${individualModPath}`, "mod_config.json"), 'utf8'));
                 const modIcon = fs.readFileSync(path.join(`${individualModPath}`, `${modConfigJSON.iconPath}`));
-                
+
                 modConfigs.set(individualModPath, {
                     modPath: individualModPath,
                     dirName: modFolder,
