@@ -10,19 +10,18 @@ import { EnableData, ModData, ModDataJSON, ReplaceRestoreData, SettingsData } fr
 import { shell } from 'electron';
 import { getAllFiles, getPathSeparator } from "./utils";
 import { Marshal, MarshalObject } from "ts-marshal";
-import { diff } from 'just-diff';
-import { diffApply } from 'just-diff-apply';
 import pako from 'pako';
-
-
+import extend from 'just-extend';
 import extract from 'extract-zip';
+import { readdirSync, rmdirSync, statSync } from 'node:fs'
+import { join } from 'node:path'
 
 const modConfigs: Map<string, ModData> = new Map<string, ModData>();
 const oneshotDirFilter: string[] = ["Audio", "Data", "Fonts", "Graphics", "Languages", "Wallpaper", "steamshim", "oneshot"];
 const oneshotModFilter: string[] = ["Audio", "Data", "Fonts", "Graphics", "Languages", "Wallpaper", "oneshot"];
 
 let filePathListToRemoveToRestoreOneshot: string[] = [];
-let filePathListToReplaceToRestoreOneshot: ReplaceRestoreData[]  = [];
+let filePathListToReplaceToRestoreOneshot: ReplaceRestoreData[] = [];
 let oneshotIsRunning: boolean = false;
 let allOneshotFilesPathTrimmed: string[] = [];
 let oneshotRunningChanged: boolean = false;
@@ -30,7 +29,7 @@ let oneshotRunningChanged: boolean = false;
 
 export async function runOneshot(): Promise<void> {
     filePathListToRemoveToRestoreOneshot = [];
-    filePathListToReplaceToRestoreOneshot  = [];
+    filePathListToReplaceToRestoreOneshot = [];
 
     const [pathListFull, pathListRelative] = await getOneshotFilesThatTheModIsTryingToModify();
     const allModPathList: string[] = []
@@ -50,6 +49,13 @@ export async function runOneshot(): Promise<void> {
     if (!fs.existsSync(pathDestination)) {
         console.log(`Making OneshotTemp ${pathDestination}`)
         fs.mkdirSync(pathDestination);
+    } else {
+        if (pathDestination !== "") {
+            console.log(`Deleting OneshotTemp ${pathDestination}`)
+            fs.rmSync(pathDestination, { recursive: true }); // >~<
+            console.log(`Making OneshotTemp ${pathDestination}`)
+            fs.mkdirSync(pathDestination);
+        }
     }
 
     // copy the oneshot files that the mod is trying to modify so it can be restored later
@@ -58,7 +64,7 @@ export async function runOneshot(): Promise<void> {
         const tempFilePath: string = path.join(pathDestination, pathListRelative[i]);
 
         fs.cpSync(oneshotFilePath, tempFilePath, { recursive: true });
-        
+
         filePathListToReplaceToRestoreOneshot.push({
             oneshotFilePath: oneshotFilePath,
             tempFilePath: tempFilePath
@@ -78,14 +84,15 @@ export async function runOneshot(): Promise<void> {
 
         const oneshotFilePath: string = path.join((await getOneshotFolder())!, ...modPathRelativeSplitted.slice(2));
         const modFilePath: string = path.join((await getOneshotFolder())!, ...modPathRelativeSplitted);
+        let modifiedRXData: MarshalObject | null = null;
 
         if (allModPathList[i].includes(".rxdata")) {
             try {
                 if (!allModPathList[i].includes("Scripts.rxdata")) {
-                    // const modifiedRXData = applyModificationRXDataExcludeScripts(oneshotFilePath, modFilePath);
+                    // modifiedRXData = applyModificationRXDataExcludeScripts(oneshotFilePath, modFilePath);
 
                     // fs.writeFileSync(oneshotFilePath, Marshal.dump(modifiedRXData));
-                    // console.log(`Modified ${oneshotFilePath}`)
+                    // console.log(`Modifiying ${oneshotFilePath} with ${modFilePath}`);
 
                     fs.copyFileSync(modFilePath, oneshotFilePath)
                 } else {
@@ -94,23 +101,25 @@ export async function runOneshot(): Promise<void> {
                     // modifyRXDataScripts(oneshotFilePath, modFilePath)
                     // break;
                 };
-                
-                console.log(`Replacing ${oneshotFilePath} with ${modFilePath}`);
+
+
             } catch (error) {
-                console.log(`Failed to modify ${oneshotFilePath}`);
+                // fs.copyFileSync(modFilePath, oneshotFilePath)
+                // console.log(`Failed to modify ${oneshotFilePath}`);
+                // console.error(error);
             }
 
         } else {
             if (fs.existsSync(oneshotFilePath)) {
                 console.log(`Replacing ${oneshotFilePath} with ${modFilePath}`);
-                fs.copyFileSync(modFilePath, os.platform() == "win32" ? oneshotFilePath : path.join(getPathSeparator(), oneshotFilePath));
+                fs.cpSync(modFilePath, os.platform() == "win32" ? oneshotFilePath : path.join(getPathSeparator(), oneshotFilePath), { recursive: true });
             } else {
                 const oneshotTargetPath: string[] = oneshotFilePath.split(getPathSeparator())
 
                 filePathListToRemoveToRestoreOneshot.push(oneshotFilePath);
 
                 console.log(`Copying ${modFilePath} to ${path.join(...oneshotTargetPath)}`);
-                fs.copyFileSync(modFilePath, os.platform() == "win32" ? path.join(...oneshotTargetPath) : path.join(getPathSeparator(), ...oneshotTargetPath));
+                fs.cpSync(modFilePath, os.platform() == "win32" ? path.join(...oneshotTargetPath) : path.join(getPathSeparator(), ...oneshotTargetPath), { recursive: true });
             }
         }
     }
@@ -169,7 +178,7 @@ export async function updateEvery100ms(): Promise<void> {
     if (oneshotRunningChanged != oneshotIsRunning) {
         if (!oneshotIsRunning) {
             console.log("Oneshot is closed");
-            for(const filePathToReplaceToRestoreOneshot of filePathListToReplaceToRestoreOneshot) {
+            for (const filePathToReplaceToRestoreOneshot of filePathListToReplaceToRestoreOneshot) {
                 console.log(`Replacing ${filePathToReplaceToRestoreOneshot.oneshotFilePath} with ${filePathToReplaceToRestoreOneshot.tempFilePath}`);
                 fs.copyFileSync(filePathToReplaceToRestoreOneshot.tempFilePath, filePathToReplaceToRestoreOneshot.oneshotFilePath)
             }
@@ -181,16 +190,43 @@ export async function updateEvery100ms(): Promise<void> {
                 fs.rmSync(tempOneshotPathToDelete, { recursive: true }); // >~<
             }
 
-            for(const filePathToRemoveToRestoreOneshot of filePathListToRemoveToRestoreOneshot) {
+            for (const filePathToRemoveToRestoreOneshot of filePathListToRemoveToRestoreOneshot) {
                 console.log(`Deleting ${filePathToRemoveToRestoreOneshot}`)
                 fs.unlinkSync(filePathToRemoveToRestoreOneshot);
             }
-            
+
+            const oneshotFolder = await getOneshotFolder();
+
+            if (oneshotFolder !== null && oneshotFolder !== "") {
+                cleanupEmptyFolders(oneshotFolder);
+            }
+
+
         } else {
             console.log("Oneshot is running");
         }
 
         oneshotRunningChanged = oneshotIsRunning;
+    }
+}
+
+function cleanupEmptyFolders(folderPath: string): void {
+    if (!statSync(folderPath).isDirectory()) {
+        return
+    }
+
+    let files = readdirSync(folderPath)
+
+    if (files.length > 0) {
+        files.forEach((file) => cleanupEmptyFolders(join(folderPath, file)))
+        // Re-evaluate files; after deleting subfolders we may have an empty parent
+        // folder now.
+        files = readdirSync(folderPath)
+    }
+
+    if (files.length == 0) {
+        console.log('Deleting: ', folderPath)
+        rmdirSync(folderPath)
     }
 }
 
@@ -204,7 +240,7 @@ function applyModificationRXDataExcludeScripts(fileToModifyPath: string, fileTha
         throw new Error("Error: fileThatModifyIt is null");
     }
 
-    diffApply(fileToModify, diff(fileToModify, fileThatModifyIt));
+    extend(fileToModify, fileThatModifyIt);
 
     return fileToModify;
 }

@@ -25,11 +25,11 @@
     "@electron-toolkit/utils": "^3.0.0",
     "electron-updater": "^6.1.7",
     "extract-zip": "^2.0.1",
-    "just-diff": "^6.0.2",
-    "just-diff-apply": "^5.5.0",
+    "just-extend": "^6.2.0",
     "pako": "^2.1.0",
     "react-router-dom": "^6.23.0",
-    "ts-marshal": "^0.0.11"
+    "ts-marshal": "^0.0.11",
+    "xtend": "^4.0.2"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^2.0.0",
