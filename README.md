@@ -32,3 +32,18 @@ $ npm run build:mac
 # For Linux
 $ npm run build:linux
 ```
+
+### Mod Display Information
+You need to have ```mod_config.json``` in each mod directory
+it should contains
+```bash
+{
+    "name": "The Mod Name",
+    "iconPath": "the/relative/path/to/the/icon.png",
+    "author": "The Mod Author"
+}
+```
+if it doesn't have that it will still be able to load the mod
+but the display in the mod manager would be limited
+
+you can actually import the mod manually just place it in the mod folder in ```OneshotFolder/Mods```
