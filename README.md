@@ -47,3 +47,5 @@ if it doesn't have that it will still be able to load the mod
 but the display in the mod manager would be limited
 
 you can actually import the mod manually just place it in the mod folder in ```OneshotFolder/Mods```
+
+i can't build for 32 bit linux so yeah https://www.electronjs.org/blog/linux-32bit-support
