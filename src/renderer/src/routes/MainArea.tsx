@@ -19,11 +19,14 @@ export default function MainArea(): JSX.Element {
 
     const [oneshotFolder, setOneshotFolder] = useState('')
     const [modConfigs, setModConfigs] = useState<Map<string, ModData>>(new Map());
-    const [updateDelay, setUpdateDelay] = useState(0);
-    
+    const [updateDelay100ms, setUpdateDelay100ms] = useState(0);
+    const [updateDelay10ms, setUpdateDelay10ms] = useState(0);
+
     const [openNotOneshotMod, setOpenNotOneshotMod] = useState(false);
     const [openModConflict, setOpenModConflict] = useState(false);
     const [openModLoading, setOpenModLoading] = useState(false);
+    const [openModLoadingStatus, setOpenModLoadingStatus] = useState(false);
+    const [modLoadingStatus, setModLoadingStatus] = useState("");
 
     // eslint-disable-next-line prefer-const
     let [modImportDestinationPath, setModImportDestinationPath] = useState("");
@@ -33,7 +36,7 @@ export default function MainArea(): JSX.Element {
         async function isSettingsFileExist(): Promise<void> {
             const isFileExist = await window.api.isSettingsFileExist();
 
-            if (isFileExist) { 
+            if (isFileExist) {
                 // load the settings and set the states
                 const settings: string = await window.api.readSettingsFile();
                 const settingsJson: SettingsData = JSON.parse(settings);
@@ -57,7 +60,7 @@ export default function MainArea(): JSX.Element {
             await isSettingsFileExist();
 
             if (window.api.isOneshotFilesPathsEmpty()) {
-                window.api.setupOneshotFilesPaths();   
+                window.api.setupOneshotFilesPaths();
             }
         }
 
@@ -69,7 +72,7 @@ export default function MainArea(): JSX.Element {
     }
 
     async function importModClicked(): Promise<void> {
-        const modFilePath: string | null =  await window.api.importMod();
+        const modFilePath: string | null = await window.api.importMod();
 
         if (modFilePath == null) {
             return;
@@ -88,13 +91,13 @@ export default function MainArea(): JSX.Element {
             if (modImportDestinationPath == "") {
                 return;
             }
-    
+
             if (!await window.api.isFolderOneshotMod(modImportDestinationPath)) {
                 setOpenModLoading(false);
-                setOpenNotOneshotMod(true);    
+                setOpenNotOneshotMod(true);
             } else {
                 setOpenModLoading(false);
-                await modIsOneshotMod();   
+                await modIsOneshotMod();
             }
         }
 
@@ -103,7 +106,7 @@ export default function MainArea(): JSX.Element {
 
     async function modIsOneshotMod(): Promise<void> {
         setOpenNotOneshotMod(false);
-        
+
         if (await window.api.isModHaveConflict(modImportDestinationPath)) {
             setOpenModConflict(true);
         }
@@ -118,16 +121,33 @@ export default function MainArea(): JSX.Element {
         setModConfigs(await window.api.getModConfigs());
     }
 
+    async function updateEvery10ms(): Promise<void> {
+        setModLoadingStatus(await window.api.getModLoadingStatus());
+        setOpenModLoadingStatus(modLoadingStatus !== "");
+    }
+
+
+    // the 10 ms interval clock
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setUpdateDelay10ms(updateDelay10ms + 1);
+
+            updateEvery10ms();
+        }, 100);
+
+        return () => clearInterval(interval);
+    }, [updateDelay100ms]);
+
     // the 100 ms interval clock
     useEffect(() => {
         const interval = setInterval(() => {
-            setUpdateDelay(updateDelay + 1);
+            setUpdateDelay100ms(updateDelay100ms + 1);
 
             updateEvery100ms();
         }, 100);
 
         return () => clearInterval(interval);
-    }, [updateDelay]);
+    }, [updateDelay100ms]);
 
     async function oneshotFolderPathSelector(): Promise<void> {
         const result: any = await window.api.openOneshotFolderSelector();
@@ -149,14 +169,14 @@ export default function MainArea(): JSX.Element {
                     oneshotPath: oneshotFolder,
                     modEnabledConfigs: settings.modEnabledConfigs
                 }
-    
+
                 await window.api.writeSettingsFile(JSON.stringify(settingsJson));
             } else {
                 const settingsJson: SettingsData = {
                     oneshotPath: oneshotFolder,
                     modEnabledConfigs: []
                 }
-    
+
                 await window.api.writeSettingsFile(JSON.stringify(settingsJson));
             }
 
@@ -201,16 +221,24 @@ export default function MainArea(): JSX.Element {
             </Modal>
 
             <Modal haveCloseButton={false} canClose={false} className="not-oneshot-modal" openModal={openModConflict} closeModal={() => setOpenModConflict(false)}>
-                <p className="not-oneshot-mod-text">This mod have conflict with other mod and loading it will cause weird thing to happen</p>
+                <p className="not-oneshot-mod-text">This mod have conflict with other mod running it together will cause weird thing to happen, You can still load 1 mod at the time and disable the rest and you will be fine</p>
                 <div className="not-oneshot-mod-button-container">
                     <TextButton text="Load it anyways" className="not-oneshot-mod-modal-button" onClick={modIsFine} />
-                    <TextButton text="Exit" className="not-oneshot-mod-modal-button" onClick={modIsConflictWithOtherMod} />
+                    <TextButton text="Cancel" className="not-oneshot-mod-modal-button" onClick={modIsConflictWithOtherMod} />
                 </div>
             </Modal>
 
             <Modal haveCloseButton={false} canClose={false} className="" openModal={openModLoading} closeModal={() => setOpenModLoading(false)}>
                 <div className="loading-mod-container">
                     <p className="loading-mod-text">Importing mod...</p>
+                    <img src={loadingImgPath} width="64" height="64" />
+                </div>
+            </Modal>
+
+
+            <Modal haveCloseButton={false} canClose={false} className="" openModal={openModLoadingStatus} closeModal={() => setOpenModLoadingStatus(false)}>
+                <div className="loading-mod-container">
+                    <p className="loading-mod-text">{modLoadingStatus}</p>
                     <img src={loadingImgPath} width="64" height="64" />
                 </div>
             </Modal>

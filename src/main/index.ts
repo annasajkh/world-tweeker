@@ -2,10 +2,10 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { app, shell, BrowserWindow, ipcMain, IpcMainInvokeEvent, OpenDialogReturnValue } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, IpcMainInvokeEvent, OpenDialogReturnValue, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { deleteMod, extractMod, getModConfig, getModConfigs, getOneshotFolder, importMod, isFolderOneshotDir, isFolderOneshotMod, isModHaveConflict, isOneshotFilesPathsEmpty, isSettingsFileExist, openFolderInFileManager, openOneshotFolderSelector, readSettingsFile, runOneshot, setModConfig, setModEnabled, setupModConfigs, setupOneshotFilesPaths, updateEvery100ms, writeSettingsFile } from "./main"
+import { deleteMod, extractMod, getModConfig, getModConfigs, getModLoadingStatus, getOneshotFolder, importMod, isFolderOneshotDir, isFolderOneshotMod, isModHaveConflict, isOneshotFilesPathsEmpty, isSettingsFileExist, modIsRunning, openFolderInFileManager, openOneshotFolderSelector, readSettingsFile, runOneshot, setModConfig, setModEnabled, setupModConfigs, setupOneshotFilesPaths, updateEvery100ms, writeSettingsFile } from "./main"
 import { ModData } from "../renderer/src/utils/interfaces"
 
 function createWindow(): void {
@@ -26,13 +26,23 @@ function createWindow(): void {
 
     mainWindow.on('ready-to-show', () => {
         mainWindow.show()
-        mainWindow.webContents.openDevTools()
     })
 
     mainWindow.webContents.setWindowOpenHandler((details) => {
         shell.openExternal(details.url)
         return { action: 'deny' }
     })
+
+    mainWindow.on('close', (event) => {
+        if (modIsRunning) {
+          event.preventDefault();
+          
+          dialog.showMessageBoxSync(mainWindow, {
+            type: 'error',
+            message: 'Cannot close the app while the mod is running',
+          });
+        }
+      });
 
     // HMR for renderer base on electron-vite cli.
     // Load the remote URL for development or the local html file for production.
@@ -82,6 +92,7 @@ app.whenReady().then(() => {
     ipcMain.handle('extractMod', async (_event: IpcMainInvokeEvent, modFilePath: string): Promise<string> => await extractMod(modFilePath));
     ipcMain.handle('isFolderOneshotMod', async (_event: IpcMainInvokeEvent, dirPath: string): Promise<boolean> => await isFolderOneshotMod(dirPath));
     ipcMain.handle('isModHaveConflict', async (_event: IpcMainInvokeEvent, modPath: string): Promise<boolean> => await isModHaveConflict(modPath));
+    ipcMain.handle('getModLoadingStatus', async (_event: IpcMainInvokeEvent): Promise<string> => await getModLoadingStatus());
     
     app.on('activate', function () {
         // On macOS it"s common to re-create a window in the app when the
@@ -98,6 +109,5 @@ app.on('window-all-closed', () => {
         app.quit()
     }
 })
-
 // In this file you can include the rest of your app"s specific main process
 // code. You can also put them in separate files and require them here.

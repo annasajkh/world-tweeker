@@ -25,7 +25,8 @@ const api = {
     importMod: async() : Promise<string | null> => await ipcRenderer.invoke("importMod"),
     extractMod: async(modFilePath: string) : Promise<string> => await ipcRenderer.invoke("extractMod", modFilePath),
     isFolderOneshotMod: async(dirPath: string) : Promise<boolean> => await ipcRenderer.invoke("isFolderOneshotMod", dirPath),
-    isModHaveConflict: async(modPath: string) : Promise<boolean> => await ipcRenderer.invoke("isModHaveConflict", modPath)
+    isModHaveConflict: async(modPath: string) : Promise<boolean> => await ipcRenderer.invoke("isModHaveConflict", modPath),
+    getModLoadingStatus: async(): Promise<string> => await ipcRenderer.invoke("getModLoadingStatus")
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
