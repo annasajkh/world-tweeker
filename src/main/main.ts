@@ -19,13 +19,16 @@ const oneshotModFilter: string[] = ["Audio", "Data", "Fonts", "Graphics", "Langu
 
 let filePathListToRemoveToRestoreOneshot: string[] = [];
 let filePathListToReplaceToRestoreOneshot: ReplaceRestoreData[] = [];
+
 let oneshotIsRunning: boolean = false;
+let runningFromSteam: boolean = true;
 export let modIsRunning: boolean = false;
 let allOneshotFilesPathTrimmed: string[] = [];
 let oneshotRunningChanged: boolean = false;
 let modLoadingStatus: string = "";
 
 export async function runOneshot(): Promise<void> {
+    runningFromSteam = false;
     modIsRunning = true;
     filePathListToRemoveToRestoreOneshot = [];
     filePathListToReplaceToRestoreOneshot = [];
@@ -153,7 +156,8 @@ export async function updateEvery100ms(): Promise<void> {
     }
 
     if (oneshotRunningChanged != oneshotIsRunning) {
-        if (!oneshotIsRunning) {            
+        if (!oneshotIsRunning && !runningFromSteam) {
+
             for (const filePathToReplaceToRestoreOneshot of filePathListToReplaceToRestoreOneshot) {
                 modLoadingStatus = `Replacing ${filePathToReplaceToRestoreOneshot.oneshotFilePath} with ${filePathToReplaceToRestoreOneshot.tempFilePath}`;
                 fs.copyFileSync(filePathToReplaceToRestoreOneshot.tempFilePath, filePathToReplaceToRestoreOneshot.oneshotFilePath)
@@ -179,6 +183,7 @@ export async function updateEvery100ms(): Promise<void> {
 
             modIsRunning = false;
             modLoadingStatus = "";
+            runningFromSteam = true;
         }
 
         oneshotRunningChanged = oneshotIsRunning;
@@ -325,6 +330,7 @@ export async function readSettingsFile(): Promise<string> {
 }
 
 export async function getOneshotFolder(): Promise<string | null> {
+
     if (await isSettingsFileExist()) {
         const settings: string = await readSettingsFile();
         const settingsJson: SettingsData = JSON.parse(settings);
