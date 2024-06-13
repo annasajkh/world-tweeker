@@ -1,6 +1,6 @@
 # world-tweaker
 
-An Electron application with React and TypeScript
+Oneshot Mod Manager
 
 ## Recommended IDE Setup
 
