@@ -6,7 +6,7 @@ import os from 'os'
 import { OpenDialogReturnValue, app, dialog } from "electron"
 import fs from 'fs';
 import path from "path";
-import { EnableData, ModData, ModDataJSON, ReplaceRestoreData, SettingsData } from "../renderer/src/utils/interfaces";
+import { EnableData, ModData, ModDataJSON, ReplaceRestoreData, SettingsData } from "../renderer/src/utils/types";
 import { shell } from 'electron';
 import { getAllFiles, getPathSeparator } from "./utils";
 import extract from 'extract-zip';

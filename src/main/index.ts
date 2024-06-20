@@ -6,7 +6,7 @@ import { app, shell, BrowserWindow, ipcMain, IpcMainInvokeEvent, OpenDialogRetur
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { deleteMod, extractMod, getModConfig, getModConfigs, getModLoadingStatus, getOneshotFolder, importMod, isFolderOneshotDir, isFolderOneshotMod, isModHaveConflict, isOneshotFilesPathsEmpty, isSettingsFileExist, modIsRunning, openFolderInFileManager, openOneshotFolderSelector, readSettingsFile, runOneshot, setModConfig, setModEnabled, setupModConfigs, setupOneshotFilesPaths, updateEvery100ms, writeSettingsFile } from "./main"
-import { ModData } from "../renderer/src/utils/interfaces"
+import { ModData } from "../renderer/src/utils/types"
 
 function createWindow(): void {
     // Create the browser window.

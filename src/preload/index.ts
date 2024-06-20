@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { OpenDialogReturnValue, contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import { ModData } from "../renderer/src/utils/interfaces"
+import { ModData } from "../renderer/src/utils/types"
 
 // Custom APIs for renderer
 const api = {
