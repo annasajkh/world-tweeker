@@ -4,7 +4,7 @@ import IconButton from "./IconButton";
 import MenuItem from "./MenuItem";
 import "./ModItem.css"
 import * as Popover from "@radix-ui/react-popover";
-import { EnableData, SettingsData } from "@renderer/utils/interfaces";
+import { EnableData, SettingsData } from "@renderer/utils/types";
 import Modal from "./Modal";
 import TextButton from "./TextButton";
 
