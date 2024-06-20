@@ -1,16 +1,16 @@
 /* eslint-disable prettier/prettier */
 
-export interface EnableData {
+export type EnableData = {
     key: string;
     enabled: boolean;
 }
 
-export interface SettingsData {
+export type SettingsData = {
     oneshotPath: string;
     modEnabledConfigs: EnableData[]
 }
 
-export interface ModData {
+export type ModData = {
     name: string;
     dirName: string;
     enabled: boolean;
@@ -19,14 +19,14 @@ export interface ModData {
     modPath: string;
 }
 
-export interface ModDataJSON {
+export type ModDataJSON = {
     enabled: boolean;
     name: string;
     iconPath: string;
     author: string;
 }
 
-export interface ReplaceRestoreData {
+export type ReplaceRestoreData = {
     oneshotFilePath: string;
     tempFilePath: string;
 }

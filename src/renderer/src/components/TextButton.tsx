@@ -2,16 +2,16 @@
 
 import "./TextButton.css"
 
-interface Props {
+type Props = {
     className: string
     text: string
     onClick: () => void
 }
 
-export default function TextButton({ className, text, onClick }: Props): JSX.Element {
+export default function TextButton(props: Props): JSX.Element {
   return (
-    <div className={`text-button ${className}`} onClick={onClick}>
-        <p>{text}</p>
+    <div className={`text-button ${props.className}`} onClick={props.onClick}>
+        <p>{props.text}</p>
     </div>
   )
 }

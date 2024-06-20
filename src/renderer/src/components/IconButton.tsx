@@ -2,7 +2,7 @@
 import React from 'react';
 import './IconButton.css'
 
-interface Props {
+type Props = {
     className: string
     src: string
     onClick: () => void
