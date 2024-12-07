@@ -79,12 +79,11 @@ export async function runOneshot(): Promise<void> {
     // time to do funny thing to twm
     for (let i = 0; i < allModPathList.length; i++) {
         //split the mod path into array ex ["M:", "SteamLibrary", "steamapps", "common","Oneshot", "Mods", "mod name", "Data", "Map091.rxdata"]
-        const modPathRelativeSplitted: string[] = allModPathList[i].split(getPathSeparator());
+        let modPathRelativeSplitted: string[] = allModPathList[i].split(getPathSeparator());
 
-        // continously chop the front until we get the relative path ex ["Mods", "mod name", "Data", "Map091.rxdata"]
-        while (modPathRelativeSplitted[0] != "Mods") {
-            modPathRelativeSplitted.shift();
-        }
+        const indexChop: number = modPathRelativeSplitted.indexOf("Mods");
+        
+        modPathRelativeSplitted = modPathRelativeSplitted.slice(indexChop, modPathRelativeSplitted.length);
 
         const oneshotFilePath: string = path.join((await getOneshotFolder())!, ...modPathRelativeSplitted.slice(2));
         const modFilePath: string = path.join((await getOneshotFolder())!, ...modPathRelativeSplitted);
@@ -103,19 +102,29 @@ export async function runOneshot(): Promise<void> {
         }
     }
 
-    switch (os.platform()) {
-        case 'win32': {
-            spawn('explorer', ['steam://rungameid/420530']);
-            break;
+    try {
+        switch (os.platform()) {
+            case 'win32': {
+                exec('start steam://rungameid/420530', (error) => {
+                    if (error) {
+                        exec('cmd /c start steam://rungameid/420530');
+                    }
+                });                
+                break;
+            }
+            case 'linux': {
+                spawn('xdg-open', ['steam://rungameid/420530'])
+                break;
+            }
+            default: {
+                throw new Error('Unsupported platform')
+            }
         }
-        case 'linux': {
-            spawn('xdg-open', ['steam://rungameid/420530'])
-            break;
-        }
-        default: {
-            throw new Error('Unsupported platform')
-        }
+    } catch (exception) {
+        await restoreOneshot();
+        alert(`Cannot launch Oneshot ${exception}`);
     }
+
 
     modLoadingStatus = "";
 }
@@ -157,37 +166,40 @@ export async function updateEvery100ms(): Promise<void> {
 
     if (oneshotRunningChanged != oneshotIsRunning) {
         if (!oneshotIsRunning && !runningFromSteam) {
-
-            for (const filePathToReplaceToRestoreOneshot of filePathListToReplaceToRestoreOneshot) {
-                modLoadingStatus = `Replacing ${filePathToReplaceToRestoreOneshot.oneshotFilePath} with ${filePathToReplaceToRestoreOneshot.tempFilePath}`;
-                fs.copyFileSync(filePathToReplaceToRestoreOneshot.tempFilePath, filePathToReplaceToRestoreOneshot.oneshotFilePath)
-            }
-
-            const tempOneshotPathToDelete = path.join(app.getPath('userData'), 'OneshotTemp');
-
-            if (tempOneshotPathToDelete !== "") {
-                modLoadingStatus = `Deleting OneshotTemp ${tempOneshotPathToDelete}`
-                fs.rmSync(tempOneshotPathToDelete, { recursive: true }); // >~<
-            }
-
-            for (const filePathToRemoveToRestoreOneshot of filePathListToRemoveToRestoreOneshot) {
-                modLoadingStatus = `Deleting ${filePathToRemoveToRestoreOneshot}`
-                fs.unlinkSync(filePathToRemoveToRestoreOneshot);
-            }
-
-            const oneshotFolder = await getOneshotFolder();
-
-            if (oneshotFolder !== null && oneshotFolder !== "") {
-                cleanupEmptyFolders(oneshotFolder);
-            }
-
-            modIsRunning = false;
-            modLoadingStatus = "";
-            runningFromSteam = true;
+            await restoreOneshot();
         }
 
         oneshotRunningChanged = oneshotIsRunning;
     }
+}
+
+async function restoreOneshot(): Promise<void> {
+    for (const filePathToReplaceToRestoreOneshot of filePathListToReplaceToRestoreOneshot) {
+        modLoadingStatus = `Replacing ${filePathToReplaceToRestoreOneshot.oneshotFilePath} with ${filePathToReplaceToRestoreOneshot.tempFilePath}`;
+        fs.copyFileSync(filePathToReplaceToRestoreOneshot.tempFilePath, filePathToReplaceToRestoreOneshot.oneshotFilePath)
+    }
+
+    const tempOneshotPathToDelete = path.join(app.getPath('userData'), 'OneshotTemp');
+
+    if (tempOneshotPathToDelete !== "") {
+        modLoadingStatus = `Deleting OneshotTemp ${tempOneshotPathToDelete}`
+        fs.rmSync(tempOneshotPathToDelete, { recursive: true }); // >~<
+    }
+
+    for (const filePathToRemoveToRestoreOneshot of filePathListToRemoveToRestoreOneshot) {
+        modLoadingStatus = `Deleting ${filePathToRemoveToRestoreOneshot}`
+        fs.unlinkSync(filePathToRemoveToRestoreOneshot);
+    }
+
+    const oneshotFolder = await getOneshotFolder();
+
+    if (oneshotFolder !== null && oneshotFolder !== "") {
+        cleanupEmptyFolders(oneshotFolder);
+    }
+
+    modIsRunning = false;
+    modLoadingStatus = "";
+    runningFromSteam = true;
 }
 
 export async function getModLoadingStatus(): Promise<string> {
@@ -308,7 +320,7 @@ export async function extractMod(modFilePath: string): Promise<string> {
 }
 
 
-export async function isSettingsFileExist(): Promise<boolean> {
+export async function isSettingsFileExist(): Promise<boolean> {    
     return fs.existsSync(path.join(app.getPath('userData'), 'settings.json'));
 }
 
@@ -478,7 +490,6 @@ export async function setupModConfigs(): Promise<void> {
     const modEnabledConfigs: EnableData[] = settings.modEnabledConfigs;
 
     fs.readdirSync(modDirectory).forEach(modFolder => {
-
         // construct the full mod path
         const individualModPath: string = path.join(`${modDirectory}`, `${modFolder}`);
 
