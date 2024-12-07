@@ -8,9 +8,11 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { deleteMod, extractMod, getModConfig, getModConfigs, getModLoadingStatus, getOneshotFolder, importMod, isFolderOneshotDir, isFolderOneshotMod, isModHaveConflict, isOneshotFilesPathsEmpty, isSettingsFileExist, modIsRunning, openFolderInFileManager, openOneshotFolderSelector, readSettingsFile, runOneshot, setModConfig, setModEnabled, setupModConfigs, setupOneshotFilesPaths, updateEvery100ms, writeSettingsFile } from "./main"
 import { ModData } from "../renderer/src/utils/types"
 
+let mainWindow: BrowserWindow;
+
 function createWindow(): void {
     // Create the browser window.
-    const mainWindow = new BrowserWindow({
+    mainWindow = new BrowserWindow({
         icon:  join(__dirname, '../../resources/icon.ico'),
         minWidth: 960,
         minHeight: 540,
@@ -71,7 +73,7 @@ app.whenReady().then(() => {
     createWindow();
 
     // the bridge to the renderer process
-    ipcMain.handle('runOneshot', async (_event: IpcMainInvokeEvent): Promise<void> => await runOneshot());
+    ipcMain.handle('runOneshot', async (_event: IpcMainInvokeEvent): Promise<void> => await runOneshot(mainWindow));
     ipcMain.handle('openOneshotFolderSelector', async (_event: IpcMainInvokeEvent): Promise<OpenDialogReturnValue> => await openOneshotFolderSelector());
     ipcMain.handle('isSettingsFileExist', async (_event: IpcMainInvokeEvent): Promise<boolean> => await isSettingsFileExist());
     ipcMain.handle('isFolderOneshotDir', async (_event: IpcMainInvokeEvent, dirPath: string): Promise<boolean> => await isFolderOneshotDir(dirPath));

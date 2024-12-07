@@ -3,7 +3,7 @@
 
 import { exec, spawn } from 'child_process'
 import os from 'os'
-import { OpenDialogReturnValue, app, dialog } from "electron"
+import { BrowserWindow, OpenDialogReturnValue, app, dialog } from "electron"
 import fs from 'fs';
 import path from "path";
 import { EnableData, ModData, ModDataJSON, ReplaceRestoreData, SettingsData } from "../renderer/src/utils/types";
@@ -27,7 +27,16 @@ let allOneshotFilesPathTrimmed: string[] = [];
 let oneshotRunningChanged: boolean = false;
 let modLoadingStatus: string = "";
 
-export async function runOneshot(): Promise<void> {
+export async function runOneshot(mainWindow: BrowserWindow): Promise<void> {
+    if (oneshotIsRunning) {
+        dialog.showMessageBoxSync(mainWindow, {
+            type: 'error',
+            message: 'Oneshot is already running!!!',
+        });
+          
+        return;
+    }
+
     runningFromSteam = false;
     modIsRunning = true;
     filePathListToRemoveToRestoreOneshot = [];
