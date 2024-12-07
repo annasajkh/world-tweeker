@@ -6,7 +6,7 @@ import './MainArea.css'
 import { useEffect, useState } from "react";
 import Modal from "@renderer/components/Modal";
 import FolderSelector from "@renderer/components/FolderSelector";
-import { ModData, SettingsData } from "@renderer/utils/interfaces";
+import { ModData, SettingsData } from "../utils/types"
 import TextButton from "@renderer/components/TextButton";
 import ModItem from "@renderer/components/ModItem";
 

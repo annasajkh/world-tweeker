@@ -6,7 +6,7 @@ import './Settings.css'
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import FolderSelector from "@renderer/components/FolderSelector"
-import { SettingsData } from "@renderer/utils/interfaces"
+import { SettingsData } from "../utils/types"
 
 export default function Settings(): JSX.Element {
     const [oneshotFolder, setOneshotFolder] = useState<string>('');
